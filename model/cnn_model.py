@@ -34,13 +34,14 @@ class TextCNN(object):
             self.embeddings = tf.Variable(
                 tf.random_uniform([vocab_size, embedding_size], -1.0, 1.0),
                 name="embeddings")
-            #self.embeddings_static = tf.Variable(
-            #    tf.random_uniform([vocab_size, embedding_size], -1.0, 1.0),
-            #    name="embeddings.static", trainable=False)
 
             self.embedded_words = tf.nn.embedding_lookup(self.embeddings, self.input_x)
             self.embedded_words_expanded = tf.expand_dims(self.embedded_words, -1)
 
+            # code for static embeddings:
+            #self.embeddings_static = tf.Variable(
+            #    tf.random_uniform([vocab_size, embedding_size], -1.0, 1.0),
+            #    name="embeddings.static", trainable=False)
             #self.embedded_words_static = tf.nn.embedding_lookup(self.embeddings_static, self.input_x)
             #self.embedded_words_expanded_static = tf.expand_dims(self.embedded_words_static, -1)
 
@@ -52,24 +53,27 @@ class TextCNN(object):
                 filter_shape = [filter_size, embedding_size, 1, num_filters]
                 filter_matrix = tf.Variable(tf.truncated_normal(filter_shape, stddev=0.1), name="filter_matrix")
                 bias = tf.Variable(tf.constant(0.1, shape=[num_filters]), name="bias")
-                conv = tf.nn.conv2d(
+                convolutions = tf.nn.conv2d(
                     self.embedded_words_expanded, # [batch, in_height, in_width, in_channels]
                     filter_matrix, # [filter_height, filter_width, in_channels, out_channels]
                     strides=[1, 1, 1, 1],
                     padding="VALID",
                     name="conv")
                 # Apply nonlinearity
-                h = tf.nn.relu(tf.nn.bias_add(conv, bias), name="relu")
+                h = tf.nn.relu(tf.nn.bias_add(convolutions, bias), name="relu")
                 # Maxpooling over the outputs
                 # leaves us with a tensor of shape [batch_size, 1, 1, num_filters]
                 pooled = tf.nn.max_pool(
-                    h, #[batch, height, width, channels]
+                    h,  # [batch, height, width, channels]
                     # size of the window for each dimension of the input tensor.
                     ksize=[1, sequence_length - filter_size + 1, 1, 1],
-                    strides=[1, 1, 1, 1], # stride of the sliding window for each dimension of the input tensor
+                    strides=[1, 1, 1, 1],  # stride of the sliding window for each dimension of the input tensor
                     padding='VALID',
                     name="pool")
                 pooled_outputs.append(pooled)
+
+                # Convolutions for static embeddings:
+
                 #filter_matrix_s = tf.Variable(tf.truncated_normal(filter_shape, stddev=0.1), name="filter_matrix")
                 #bias_s = tf.Variable(tf.constant(0.1, shape=[num_filters]), name="bias")
                 #conv_s = tf.nn.conv2d(
