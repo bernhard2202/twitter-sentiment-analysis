@@ -4,9 +4,9 @@ import gensim
 import getopt
 import numpy as np
 import sys
-from stop_words import get_stop_words
+#from stop_words import get_stop_words
 
-stopwords = set(get_stop_words('en'))
+#stopwords = set(get_stop_words('en'))
 
 FULL_POS_FILE_NAME = "../data/train/train_pos_full.txt"
 FULL_NEG_FILE_NAME = "../data/train/train_neg_full.txt"
@@ -27,7 +27,8 @@ def word_filter(word):
         return None
     # remove hashtags in beginning
     if word[0] == '#':
-        word = word[1:]
+        return None
+    #    word = word[1:]
 
     # stopwords
     # if word in stopwords:
@@ -110,6 +111,60 @@ def pickle_word_embeddings(vocab):
     print("Used {} pre-trained word2vec vectors and {} new random vectors.".format(changed, (len(vocab) - changed)))
 
 
+
+def handle_hashtags(line,vocab):
+    result_line = []
+    for word in line.split():
+        if word[0] == '#':
+            word = word[1:]
+            length = len(word)
+            word_result = []
+            claimed = np.full(length, False, dtype=bool)  #initially all letters are free to select
+            for n in range(length, 0, -1):  #initially search for words with n letters, then n-1,... until 1 letter words
+                for s in range(0, length-n+1):  #starting point. so we examine substring  [s,s+n)
+                    substring = word[s:s+n]
+                    if substring in vocab:
+                        if ~np.any(claimed[s:s+n]):   #nothing is claimed so take it
+                            claimed[s:s+n] = True
+                            word_result.append((s, substring))
+            word_result.sort()
+            for _, substring in word_result:
+                result_line.append(substring)
+        else:
+            result_line.append(word)
+    return ' '.join(result_line)
+
+def test_handle_hashtags():
+    with open('../data/preprocessing/vocab.pkl', 'rb') as f:
+        vocab = pickle.load(f)
+
+    train_pos_file = "../data/train/train_pos.txt"
+    train_neg_file = "../data/train/train_neg.txt"
+    max_sentence_length = 25
+    train_size = SMALL_TRAIN_SIZE = 200000
+    train_X = np.zeros((train_size, max_sentence_length))
+    train_Y = np.zeros((train_size, 2))
+    # sanity check because we initialize with zero then we don't have to do padding
+    assert vocab['<PAD/>'] == 0
+    i = 0
+    pos = 0
+    cut = 0
+    empty = 0
+    for filename in [train_neg_file]:
+        with open(filename) as f:
+            cnt = 0
+            for line in f:
+                cnt += 1
+                if cnt > 300:
+                    break
+                line = line.strip().replace(',', ' ')
+                j = 0
+                print("before handle_hashtags: {}".format(line))
+                line = handle_hashtags(line, vocab)
+                print("after handle_hashtags: {}".format(line))
+
+
+
 def prepare_data(train_pos_file, train_neg_file, train_size, vocab, max_sentence_length):
     """
     prepare training data
@@ -127,6 +182,9 @@ def prepare_data(train_pos_file, train_neg_file, train_size, vocab, max_sentence
             for line in f:
                 line = line.strip().replace(',', ' ')
                 j = 0
+                #print("before handle_hashtags: {}".format(line))
+                line = handle_hashtags(line, vocab)
+                #print("after handle_hashtags: {}".format(line))
                 for word in line.split():
                     word = filter_with_voc(word, vocab)
                     if word is not None:
@@ -168,6 +226,7 @@ def prepare_valid_data(max_sentence_length, vocab):
             line = line.strip().split(',')
             tweet = ' '.join(line[1:])
             tweet = tweet.strip().replace(',', ' ')
+            tweet = handle_hashtags(tweet, vocab)
             j = 0
             for word in tweet.split():
                 filtered_word = filter_with_voc(word, vocab)
@@ -230,3 +289,4 @@ def main(argv):
 
 if __name__ == "__main__":
     main(sys.argv[1:])
+    #test_handle_hashtags()
