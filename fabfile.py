@@ -1,5 +1,7 @@
 """Fabric deployment file for remote model training.
 
+TODO(andrei): fabric is deprecated. Use 'pyinvoke'.
+
 Uses Python Fabric (http://www.fabfile.org/).
 
 Make sure that 'env.hosts' points to wherever you want to train your model, and
