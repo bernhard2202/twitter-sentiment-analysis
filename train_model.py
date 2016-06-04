@@ -213,7 +213,7 @@ with tf.Graph().as_default():
 
                 time_str = datetime.datetime.now().isoformat()
                 print("{}: Evaluation report at step {}:".format(time_str, current_step))
-                print("\tloss{:g}\n\tacc{:g} (stddev {:g})\n\t(Tested on the full test set)\n"
+                print("\tloss {:g}\n\tacc {:g} (stddev {:g})\n\t(Tested on the full test set)\n"
                       .format(average_loss, average_accuracy, std_accuracy))
 
             if current_step % FLAGS.checkpoint_every == 0:
