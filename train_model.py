@@ -94,6 +94,7 @@ y_dev = np.split(y_dev, test_split)
 # Training
 # ==================================================
 
+
 with tf.Graph().as_default():
     session_conf = tf.ConfigProto(
       allow_soft_placement=FLAGS.allow_soft_placement,
@@ -171,9 +172,7 @@ with tf.Graph().as_default():
             return train_loss, train_accuracy
 
         def dev_step(x_batch, y_batch):
-            """
-            Evaluates model on a dev set
-            """
+            """Performs a model evaluation batch step on the dev set."""
             feed_dict = {
               cnn.input_x: x_batch,
               cnn.input_y: y_batch,
@@ -183,44 +182,76 @@ with tf.Graph().as_default():
                 [global_step, cnn.loss, cnn.accuracy], feed_dict)
             return dev_loss, dev_accuracy
 
+        def evaluate_model(current_step):
+            """Evaluates model on a dev set."""
+            losses = np.empty(test_split)
+            accuracies = np.empty(test_split)
+
+            for i in range(test_split):
+                loss, accuracy = dev_step(x_dev[i], y_dev[i])
+                losses[i] = loss
+                accuracies[i] = accuracy
+
+            average_loss = np.nanmean(losses)
+            average_accuracy = np.nanmean(accuracies)
+            std_accuracy = np.nanstd(accuracies)
+            dev_summary_writer.add_summary(make_summary('accuracy', average_accuracy),
+                                           current_step)
+            dev_summary_writer.add_summary(make_summary('loss', average_loss),
+                                           current_step)
+            dev_summary_writer.add_summary(make_summary('accuracy_std', std_accuracy),
+                                           current_step)
+            time_str = datetime.datetime.now().isoformat()
+            print("{}: Evaluation report at step {}:".format(time_str, current_step))
+            print(
+                "\tloss {:g}\n\tacc {:g} (stddev {:g})\n\t(Tested on the full test set)\n"
+                    .format(average_loss, average_accuracy, std_accuracy))
+
+
         # Generate batches
         batches = batch_iter(
             np.array(list(zip(x_train, y_train))),
             FLAGS.batch_size,
             FLAGS.num_epochs)
         # Training loop. For each batch...
-        for batch in batches:
-            x_batch, y_batch = zip(*batch)
-            l, a = train_step(x_batch, y_batch)
-            current_step = tf.train.global_step(sess, global_step)
+        current_step = None
+        try:
+            for batch in batches:
+                x_batch, y_batch = zip(*batch)
+                l, a = train_step(x_batch, y_batch)
+                current_step = tf.train.global_step(sess, global_step)
 
-            if current_step % FLAGS.output_every == 0:
-                time_str = datetime.datetime.now().isoformat()
-                print("{}: step {}, loss {:g}, acc {:g}".format(time_str, current_step, l, a))
+                if current_step % FLAGS.output_every == 0:
+                    time_str = datetime.datetime.now().isoformat()
+                    print("{}: step {}, loss {:g}, acc {:g}".format(time_str, current_step, l, a))
 
-            if current_step % FLAGS.evaluate_every == 0:
-                print("\nEvaluating..")
-                losses = np.empty(test_split)
-                accuracies = np.empty(test_split)
-                for i in range(test_split):
-                    loss, accuracy = dev_step(x_dev[i], y_dev[i])
-                    losses[i] = loss
-                    accuracies[i] = accuracy
+                if current_step % FLAGS.evaluate_every == 0:
+                    print("\nEvaluating...")
+                    evaluate_model(current_step)
 
-                average_loss = np.nanmean(losses)
-                average_accuracy = np.nanmean(accuracies)
-                std_accuracy = np.nanstd(accuracies)
+                if current_step % FLAGS.checkpoint_every == 0:
+                    print("Save model parameters...")
+                    path = saver.save(sess, checkpoint_prefix, global_step=current_step)
+                    print("Saved model checkpoint to {}\n".format(path))
 
-                dev_summary_writer.add_summary(make_summary('accuracy', average_accuracy), current_step)
-                dev_summary_writer.add_summary(make_summary('loss', average_loss), current_step)
-                dev_summary_writer.add_summary(make_summary('accuracy_std', std_accuracy), current_step)
+            if current_step is None:
+                print("No steps performed.")
+            else:
+                print("\n\nFinished all batches. Performing final evaluations.")
 
-                time_str = datetime.datetime.now().isoformat()
-                print("{}: Evaluation report at step {}:".format(time_str, current_step))
-                print("\tloss {:g}\n\tacc {:g} (stddev {:g})\n\t(Tested on the full test set)\n"
-                      .format(average_loss, average_accuracy, std_accuracy))
+                print("Performing final evaluation...")
+                evaluate_model(current_step)
 
-            if current_step % FLAGS.checkpoint_every == 0:
-                print("Save model parameters...")
+                print("Performing final checkpoint...")
+                path = saver.save(sess, checkpoint_prefix, global_step=current_step)
+                print("Saved model checkpoint to {}\n".format(path))
+
+        except KeyboardInterrupt:
+            if current_step is None:
+                print("No checkpointing to do.")
+            else:
+                # TODO(andrei): Consider also evaluating here.
+                print("You interrupted the training. Performing final checkpoint.")
+                print("Press C-c again to forcefully interrupt this.")
                 path = saver.save(sess, checkpoint_prefix, global_step=current_step)
                 print("Saved model checkpoint to {}\n".format(path))

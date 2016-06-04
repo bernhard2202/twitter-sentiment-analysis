@@ -69,9 +69,9 @@ def train():
 
     with cd('deploy'):
         # TODO(andrei): Pass these parameters as arguments to fabric.
-        run('python -m train_model --num_epochs 1'
+        run('python -m train_model --num_epochs 20'
             ' --batch_size 256 --evaluate_every 250'
-            ' --checkpoint_every 1000 --output_every 50')
+            ' --checkpoint_every 1000 --output_every 100')
 
     local('mkdir -p data/runs/gce')
 

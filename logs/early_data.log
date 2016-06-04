@@ -1,6 +1,6 @@
 # Early experment data from before Andrei added support for automatic logging
 
-## Trial run
+## Trial Run (10%, 10 epochs)
 # FINAL EVALUATION: loss 0.374358, acc 0.83095
 
 # Last numbers on train set
@@ -33,4 +33,60 @@ Train/Dev split: 180000/20000
 /Users/andrei/workspace/cil/project/data/runs/1465036761
 
 
-## A few more epochs
+## 1-epoch Trial Run (10%, 1 epoch)
+Parameters:
+ALLOW_SOFT_PLACEMENT=True
+BATCH_SIZE=256
+CHECKPOINT_EVERY=250
+DROPOUT_KEEP_PROB=0.5
+EMBEDDING_DIM=300
+EVALUATE_EVERY=250
+FILTER_SIZES=3,4,5
+L2_REG_LAMBDA=0.0
+LEARNING_RATE=0.0001
+LOG_DEVICE_PLACEMENT=False
+NUM_EPOCHS=1
+NUM_FILTERS=128
+OUTPUT_EVERY=50
+
+Vocabulary Size: 19808
+Train/Dev split: 180000/20000
+Writing to /Users/andrei/workspace/cil/project/data/runs/1465057414
+
+2016-06-04T18:23:52.070584: step 50, loss 0.8167, acc 0.636719
+2016-06-04T18:24:09.139316: step 100, loss 0.708367, acc 0.625
+2016-06-04T18:24:29.142203: step 150, loss 0.619339, acc 0.714844
+2016-06-04T18:24:49.507956: step 200, loss 0.757883, acc 0.609375
+2016-06-04T18:25:09.436823: step 250, loss 0.752409, acc 0.613281
+
+Evaluating..
+2016-06-04T18:25:16.776539: Evaluation report at step 250:
+	loss 0.528352
+	acc 0.7116 (stddev 0.0442881)
+	(Tested on the full test set)
+
+Save model parameters...
+Saved model checkpoint to /Users/andrei/workspace/cil/project/data/runs/1465057414/checkpoints/model-250
+
+2016-06-04T18:25:36.467368: step 300, loss 0.701385, acc 0.621094
+2016-06-04T18:25:54.587515: step 350, loss 0.654799, acc 0.6875
+2016-06-04T18:26:14.073831: step 400, loss 0.642302, acc 0.65625
+2016-06-04T18:26:32.122937: step 450, loss 0.573275, acc 0.722656
+2016-06-04T18:26:54.254215: step 500, loss 0.53709, acc 0.734375
+
+Evaluating..
+2016-06-04T18:27:03.452744: Evaluation report at step 500:
+	loss 0.479188
+	acc 0.756 (stddev 0.0434166)
+	(Tested on the full test set)
+
+Save model parameters...
+Saved model checkpoint to /Users/andrei/workspace/cil/project/data/runs/1465057414/checkpoints/model-500
+
+2016-06-04T18:27:32.788063: step 550, loss 0.581468, acc 0.710938
+2016-06-04T18:28:03.690499: step 600, loss 0.552735, acc 0.699219
+2016-06-04T18:28:30.620650: step 650, loss 0.496305, acc 0.75
+2016-06-04T18:28:56.520862: step 700, loss 0.566181, acc 0.714844
+
+## Trial Run on GCE
+# PENDING
