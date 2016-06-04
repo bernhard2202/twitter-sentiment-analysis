@@ -1,15 +1,24 @@
 #!/usr/bin/env python3
 import pickle
 import gensim
+import getopt
 import numpy as np
-# from stop_words import get_stop_words
-import re
+import sys
+from stop_words import get_stop_words
 
+stopwords = set(get_stop_words('en'))
 
-# stopwords = set(get_stop_words('en'))
-maxSentenceLength = 25
-trainSize = 2500000
-# numberPattern = re.compile('^[0-9]+.[0-9]*$')
+FULL_POS_FILE_NAME = "../data/train/train_pos_full.txt"
+FULL_NEG_FILE_NAME = "../data/train/train_neg_full.txt"
+POS_FILE_NAME = "../data/train/train_pos.txt"
+NEG_FILE_NAME = "../data/train/train_neg.txt"
+VALID_FILE_NAME = "../data/test/test_data.txt"
+VOCAB_FILE_NAME = "../data/preprocessing/vocab_cut.txt"
+WORD2VEC_FILE_NAME = "../data/word2vec/GoogleNews-vectors-negative300.bin"
+
+VALID_SIZE = 10000
+FULL_TRAIN_SIZE = 2500000
+SMALL_TRAIN_SIZE = 200000
 
 
 def word_filter(word):
@@ -32,7 +41,6 @@ def word_filter(word):
     if len(word) < 2:
         return None
 
-    # todo add hastag splitting maybe?
     return word
 
 
@@ -44,24 +52,21 @@ def filter_with_voc(word, voc):
         return None
 
 
-def main():
-    print('Pickle vocabulary..')
-
-    '''
+def pickle_vocab():
+    """
     pickle vocabulary
-    '''
-
+    """
     vocab = dict()
-    vocabinv = dict()
+    vocab_inv = dict()
     # pre insert the padding word
     index = 0
     vocab["<PAD/>"] = index
-    vocabinv[index] = "<PAD/>"
+    vocab_inv[index] = "<PAD/>"
     index += 1
     i = 1
     words = set()
 
-    with open('../data/preprocessing/vocab_cut.txt') as f:
+    with open(VOCAB_FILE_NAME) as f:
         for idx, line in enumerate(f):
             word = word_filter(line.strip())
             # word not filtered in preprocessing and word
@@ -70,30 +75,27 @@ def main():
             if (word is not None) and (word not in words):
                 words.add(word)
                 vocab[word] = index
-                vocabinv[index] = word
+                vocab_inv[index] = word
                 index += 1
 
     # sanity check
-    assert len(vocab) == (len(words) + 1) == len(vocabinv)
+    assert len(vocab) == (len(words) + 1) == len(vocab_inv)
 
     with open('../data/preprocessing/vocab.pkl', 'wb') as f:
         pickle.dump(vocab, f, protocol=2)
     with open('../data/preprocessing/vocab-inv.pkl', 'wb') as f:
-        pickle.dump(vocabinv, f, protocol=2)
-
-    # release some memory
-    vocabinv = words = None
-
+        pickle.dump(vocab_inv, f, protocol=2)
     print("Vocabulary pickled.")
     print("Total number of unique words = {}; words filterd by preprocessing = {}".format(len(vocab), (i - index)))
 
-    '''
-    pickle word embeddings
-    '''
+    return vocab
 
-    print("Loading word2vec embeddings.. (this can take some time)")
-    model = gensim.models.word2vec.Word2Vec.load_word2vec_format('../data/word2vec/GoogleNews-vectors-negative300.bin',
-                                                                 binary=True)
+
+def pickle_word_embeddings(vocab):
+    """
+    pickle word embeddings
+    """
+    model = gensim.models.word2vec.Word2Vec.load_word2vec_format(WORD2VEC_FILE_NAME, binary=True)
     # todo more elegant way
     embedding_dim = len(model['queen'])
     changed = 0
@@ -103,25 +105,24 @@ def main():
         if word in model:
             changed += 1
             X[vocab[word]] = model[word]
-    model = []
     np.save('../data/preprocessing/embeddings', X)
-    print("Embeddings pickeled.")
+    print("Embeddings pickled.")
     print("Used {} pre-trained word2vec vectors and {} new random vectors.".format(changed, (len(vocab) - changed)))
 
-    '''
-    prepare training data
-    '''
 
-    print('prepare training data..')
-    train_X = np.zeros((trainSize, maxSentenceLength))
-    train_Y = np.zeros((trainSize, 2))
-    # sanity check because we initialize with zero then we dont have to do padding
+def prepare_data(train_pos_file, train_neg_file, train_size, vocab, max_sentence_length):
+    """
+    prepare training data
+    """
+    train_X = np.zeros((train_size, max_sentence_length))
+    train_Y = np.zeros((train_size, 2))
+    # sanity check because we initialize with zero then we don't have to do padding
     assert vocab['<PAD/>'] == 0
     i = 0
     pos = 0
     cut = 0
     empty = 0
-    for filename in ['../data/train/train_pos_full.txt', '../data/train/train_neg_full.txt']:
+    for filename in [train_neg_file, train_pos_file]:
         with open(filename) as f:
             for line in f:
                 line = line.strip().replace(',', ' ')
@@ -131,7 +132,7 @@ def main():
                     if word is not None:
                         train_X[i, j] = vocab[word]
                         j += 1
-                    if j == maxSentenceLength:
+                    if j == max_sentence_length:
                         cut += 1
                         # print("cut: "+line)
                         # cut sentences longer than max sentence lenght
@@ -139,7 +140,7 @@ def main():
                 if j == 0:
                     empty += 1
                     # print("empty: "+line)
-                if filename == '../data/train/train_pos_full.txt':
+                if filename in (FULL_POS_FILE_NAME, POS_FILE_NAME):
                     train_Y[i, 0] = 0
                     train_Y[i, 1] = 1
                     pos += 1
@@ -148,22 +149,21 @@ def main():
                     train_Y[i, 0] = 1
 
                 i += 1
+
     assert pos == (len(train_Y) / 2)
     assert train_Y.shape[0] == train_X.shape[0] == i
-    np.save('../data/preprocessing/trainX', train_X)
-    np.save('../data/preprocessing/trainY', train_Y)
-    print("Preprocessing done. {} tweets cut to max sentence lenght and {} tweets disapeared due to filtering."
-          .format(cut, empty))
 
-    '''
-    preprocess validation data
-    '''
-    print('Proprocessing the validation set..')
-    validate_x = np.zeros((10000, maxSentenceLength))
+    print("{} tweets cut to max sentence lenght and {} tweets disapeared due to filtering."
+          .format(cut, empty))
+    return train_X, train_Y
+
+
+def prepare_valid_data(max_sentence_length, vocab):
+    validate_x = np.zeros((VALID_SIZE, max_sentence_length))
     i = 0
     cut = 0
     empty = 0
-    with open('../data/test/test_data.txt') as f:
+    with open(VALID_FILE_NAME) as f:
         for line in f:
             line = line.strip().split(',')
             tweet = ' '.join(line[1:])
@@ -174,19 +174,59 @@ def main():
                 if filtered_word is not None:
                     validate_x[i, j] = vocab[filtered_word]
                     j += 1
-                if j == maxSentenceLength:
+                if j == max_sentence_length:
                     cut += 1
                     # print("cut: "+line)
                     # cut sentences longer than max sentence lenght
                     break
             if j == 0:
-                print(tweet)
+                #print(tweet)
                 empty += 1
             i += 1
     print("Preprocessing done. {} tweets cut to max sentence lenght and {} tweets disapeared due to filtering."
           .format(cut, empty))
+    return validate_x
+
+
+def usage():
+    print("usage: preprocess.py  [--full] [--sentence-length=]")
+    print("\t--full use full data set")
+    print("\t--sentence-length= maximum sentence length")
+
+
+def main(argv):
+    max_sentence_length = 25
+    train_pos_file = POS_FILE_NAME
+    train_neg_file = NEG_FILE_NAME
+    train_size = SMALL_TRAIN_SIZE
+    try:
+        opts, args = getopt.getopt(argv, "[fl:]", ["full", "sentence-length="])
+    except getopt.GetoptError:
+        usage()
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt in ("-f", "--full"):
+            train_pos_file = FULL_POS_FILE_NAME
+            train_neg_file = FULL_NEG_FILE_NAME
+            train_size = FULL_TRAIN_SIZE
+        if opt in ("-s", "--sentence-length"):
+            max_sentence_length = int(arg)
+
+    print('Pickle vocabulary..')
+    vocab = pickle_vocab()
+
+    print('Pickle word embeddings (this can take some time)..')
+    pickle_word_embeddings(vocab)
+
+    print('prepare training data..')
+    X, Y = prepare_data(train_pos_file,train_neg_file, train_size, vocab, max_sentence_length)
+    np.save('../data/preprocessing/trainX', X)
+    np.save('../data/preprocessing/trainY', Y)
+
+    print('prepare validation data..')
+    validate_x = prepare_valid_data(max_sentence_length, vocab)
     np.save('../data/preprocessing/validateX', validate_x)
 
 
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    main(sys.argv[1:])
