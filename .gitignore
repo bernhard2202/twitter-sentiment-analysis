@@ -1,6 +1,9 @@
 __pycache__
+*DS_STORE
+*.pyc
 *.csv
+*.npy
 *.pkl
 *.txt
-./data/runs/*
+data/runs/*
 *.bin
