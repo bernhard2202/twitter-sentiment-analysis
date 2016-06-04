@@ -39,8 +39,6 @@ def word_filter(word):
     #    return None
 
     # remove single chars
-    if len(word) < 2:
-        return None
 
     return word
 
@@ -254,7 +252,7 @@ def usage():
 
 
 def main(argv):
-    max_sentence_length = 25
+    max_sentence_length = 30
     train_pos_file = POS_FILE_NAME
     train_neg_file = NEG_FILE_NAME
     train_size = SMALL_TRAIN_SIZE
