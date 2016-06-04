@@ -1,6 +1,17 @@
-# Simple hacky script to train our pipeline on Google Compute Engine.
-# TODO(andrei): Use 'screen' in case connection dies.
-# TODO(andrei): Auto-download results.
+"""Fabric deployment file for remote model training.
+
+Uses Python Fabric (http://www.fabfile.org/).
+
+Make sure that 'env.hosts' points to wherever you want to train your model, and
+that the remote host has tensorflow installed.
+
+Examples:
+    `fab train`        starts to train the TF model on the remote host.
+    `fab tb`           starts Tensorboard on the remote host.
+    `fab latest_tb`    starts Tensorboard on the remote host, configuring it to
+                       only display the results of the most recent run.
+"""
+
 # TODO(andrei): Support AWS.
 
 from __future__ import with_statement
@@ -24,6 +35,9 @@ def train():
     # If something stops working, make sure you're 'rsync'ing everything you
     # need to the remote host!
 
+    # TODO(andrei): Use 'screen' in case connection dies.
+    # TODO(andrei): Auto-download results.
+
     print("Will train TF model remotely.")
 
     run('mkdir -p ~/deploy/data/preprocessing')
@@ -43,17 +57,21 @@ def train():
 
     # This syncs the model code.
     rsync(local_dir='model', remote_dir='deploy')
+
+    print("Uploaded data and code.")
+    print("Starting to train.")
+
     with cd('deploy'):
+        # TODO(andrei): Pass these as arguments to fabric.
         run('python -m train_model --num_epochs 1' \
-            '--batch_size 256 --evaluate_every 250' \
-            '--checkpoint_every 1000 --output_every 50')
+            ' --batch_size 256 --evaluate_every 250' \
+            ' --checkpoint_every 1000 --output_every 50')
 
     local('mkdir -p data/runs/gce')
 
     # This downloads the pipeline output.
     get(remote_path='~/deploy/data/runs', local_path='data/runs/gce')
-
-    print("Uploaded data.")
+    print("Downloaded the pipeline results.")
 
 
 def tb():
