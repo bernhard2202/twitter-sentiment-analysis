@@ -195,7 +195,7 @@ with tf.Graph().as_default():
                 print("{}: step {}, loss {:g}, acc {:g}".format(time_str, current_step, l, a))
 
             if current_step % FLAGS.evaluate_every == 0:
-                print("\nEvaluation:")
+                print("\nEvaluating..")
                 losses = np.empty(test_split)
                 accuracies = np.empty(test_split)
                 for i in range(test_split):
@@ -213,7 +213,7 @@ with tf.Graph().as_default():
 
                 time_str = datetime.datetime.now().isoformat()
                 print("{}: Evaluation report at step {}:".format(time_str, current_step))
-                print("\tloss{:g}\n\tacc{:g} (stddev {:g})"
+                print("\tloss{:g}\n\tacc{:g} (stddev {:g})\n\t(Tested on the full test set)\n"
                       .format(average_loss, average_accuracy, std_accuracy))
 
             if current_step % FLAGS.checkpoint_every == 0:
