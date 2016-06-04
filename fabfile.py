@@ -55,6 +55,50 @@ def train():
 
     print("Uploaded data.")
 
+
+def tb():
+    """See: 'tensorboard'"""
+    return tensorboard()
+
+
+def tensorboard():
+    """Starts a remote tensorboard to see your pipeline's status.
+
+    TODO(andrei): Run in screen.
+
+    Make sure you allow TCP on port 6006 for the remote machine!
+    """
+
+    with cd('deploy'):
+        tb_cmd = 'tensorboard --logdir data/runs'
+        screen = "screen -dmS tensorboard_screen bash -c '{}'".format(tb_cmd)
+        print(screen)
+        run(screen, pty=False)
+
+
+def latest_tb():
+    """See: 'latest_tensorboard'"""
+    return latest_tensorboard()
+
+
+def latest_tensorboard():
+    """
+    Uses the latest log dir as a source.
+    """
+    with cd('deploy'):
+        # This sets logdir to the most recent run.
+        run('tensorboard --logdir data/runs/$(ls -t data/runs | cat | head -n1)/summaries',
+            shell_escape=False, shell=False)
+
+
+def kill_tb():
+    return kill_tensorboard()
+
+
+def kill_tensorboard():
+    run('killall tensorboard')
+
+
 def host_type():
     """An example of a Fabric command."""
 
