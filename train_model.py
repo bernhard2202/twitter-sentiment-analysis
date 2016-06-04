@@ -210,8 +210,11 @@ with tf.Graph().as_default():
                 dev_summary_writer.add_summary(make_summary('accuracy', average_accuracy), current_step)
                 dev_summary_writer.add_summary(make_summary('loss', average_loss), current_step)
                 dev_summary_writer.add_summary(make_summary('accuracy_std', std_accuracy), current_step)
-                print("FINAL EVALUATION: loss{:g}, acc{:g} (stddev {:g})".format(average_loss, average_accuracy,
-                                                                                 std_accuracy))
+
+                time_str = datetime.datetime.now().isoformat()
+                print("{}: Evaluation report at step {}:".format(time_str, current_step))
+                print("\tloss{:g}\n\tacc{:g} (stddev {:g})"
+                      .format(average_loss, average_accuracy, std_accuracy))
 
             if current_step % FLAGS.checkpoint_every == 0:
                 print("Save model parameters...")
