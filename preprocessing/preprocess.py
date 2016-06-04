@@ -233,6 +233,7 @@ def main(argv):
     except getopt.GetoptError:
         usage()
         sys.exit(2)
+
     for opt, arg in opts:
         if opt in ("-f", "--full"):
             train_pos_file = FULL_POS_FILE_NAME

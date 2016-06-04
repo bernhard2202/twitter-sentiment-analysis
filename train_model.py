@@ -1,4 +1,6 @@
 #! /usr/bin/env python
+import antigravity
+
 import tensorflow as tf
 import numpy as np
 import os
@@ -48,6 +50,7 @@ tf.flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after 
 tf.flags.DEFINE_integer("checkpoint_every", 100, "Evaluate model on dev set after this many steps (default: 100)")
 tf.flags.DEFINE_integer("output_every", 1, "Output current training error after this many steps (default: 1)")
 tf.flags.DEFINE_float("learning_rate", 1e-4, "Adam Optimizer learning rate (default: 1e-4)")
+tf.flags.DEFINE_float("dev_ratio", 0.1, "Percentage of data used for validation. Between 0 and 1. (default: 0.1)")
 
 # Misc Parameters
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
@@ -76,17 +79,26 @@ embeddings = np.load('./data/preprocessing/embeddings.npy')
 
 # Randomly shuffle data
 np.random.seed(datetime.datetime.now().microsecond)
-shuffle_indices = np.random.permutation(np.arange(len(y)))
+n_data = len(y)
+shuffle_indices = np.random.permutation(np.arange(n_data))
 x_shuffled = x[shuffle_indices]
 y_shuffled = y[shuffle_indices]
 
 # TODO: This is very crude, should use cross-validation
-x_train, x_dev = x_shuffled[:-20000], x_shuffled[-20000:]
-y_train, y_dev = y_shuffled[:-20000], y_shuffled[-20000:]
+
+n_dev = int(FLAGS.dev_ratio * n_data)
+n_train = n_data - n_dev
+x_train, x_dev = x_shuffled[:n_train], x_shuffled[n_train:]
+y_train, y_dev = y_shuffled[:n_train], y_shuffled[n_train:]
+
+assert len(x_train) + len(x_dev) == n_data
+assert len(y_train) + len(y_dev) == n_data
 
 print("Vocabulary Size: {:d}".format(len(vocabulary)))
 print("Train/Dev split: {:d}/{:d}".format(len(y_train), len(y_dev)))
 
+# This splits the test data into chunks to lower memory pressure during
+# validation.
 test_split = 200
 x_dev = np.split(x_dev, test_split)
 y_dev = np.split(y_dev, test_split)
@@ -206,7 +218,6 @@ with tf.Graph().as_default():
             print(
                 "\tloss {:g}\n\tacc {:g} (stddev {:g})\n\t(Tested on the full test set)\n"
                     .format(average_loss, average_accuracy, std_accuracy))
-
 
         # Generate batches
         batches = batch_iter(
