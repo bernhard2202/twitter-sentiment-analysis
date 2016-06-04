@@ -1,4 +1,5 @@
 __pycache__
+__init__.py
 *DS_STORE
 *.pyc
 *.csv
