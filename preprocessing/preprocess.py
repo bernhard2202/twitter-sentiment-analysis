@@ -132,35 +132,6 @@ def handle_hashtags(line,vocab):
             result_line.append(word)
     return ' '.join(result_line)
 
-def test_handle_hashtags():
-    with open('../data/preprocessing/vocab.pkl', 'rb') as f:
-        vocab = pickle.load(f)
-
-    train_pos_file = "../data/train/train_pos.txt"
-    train_neg_file = "../data/train/train_neg.txt"
-    max_sentence_length = 25
-    train_size = SMALL_TRAIN_SIZE = 200000
-    train_X = np.zeros((train_size, max_sentence_length))
-    train_Y = np.zeros((train_size, 2))
-    # sanity check because we initialize with zero then we don't have to do padding
-    assert vocab['<PAD/>'] == 0
-    i = 0
-    pos = 0
-    cut = 0
-    empty = 0
-    for filename in [train_neg_file]:
-        with open(filename) as f:
-            cnt = 0
-            for line in f:
-                cnt += 1
-                if cnt > 300:
-                    break
-                line = line.strip().replace(',', ' ')
-                j = 0
-                print("before handle_hashtags: {}".format(line))
-                line = handle_hashtags(line, vocab)
-                print("after handle_hashtags: {}".format(line))
-
 
 
 def prepare_data(train_pos_file, train_neg_file, train_size, vocab, max_sentence_length):
@@ -287,4 +258,3 @@ def main(argv):
 
 if __name__ == "__main__":
     main(sys.argv[1:])
-    #test_handle_hashtags()
