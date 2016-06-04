@@ -1,0 +1,6 @@
+__pycache__
+*.csv
+*.pkl
+*.txt
+./data/runs/*
+*.bin
