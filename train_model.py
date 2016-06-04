@@ -43,7 +43,7 @@ tf.flags.DEFINE_float("l2_reg_lambda", 0.0, "L2 regularizaion lambda (default: 0
 
 # Training parameters
 tf.flags.DEFINE_integer("batch_size", 64, "Batch Size (default: 64)")
-tf.flags.DEFINE_integer("num_epochs", 10, "Number of training epochs (default: 200)")
+tf.flags.DEFINE_integer("num_epochs", 10, "Number of training epochs (default: 10)")
 tf.flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after this many steps (default: 100)")
 tf.flags.DEFINE_integer("checkpoint_every", 100, "Evaluate model on dev set after this many steps (default: 100)")
 tf.flags.DEFINE_integer("output_every", 1, "Output current training error after this many steps (default: 1)")
@@ -53,12 +53,15 @@ tf.flags.DEFINE_float("learning_rate", 1e-4, "Adam Optimizer learning rate (defa
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
 
-FLAGS = tf.flags.FLAGS
-FLAGS._parse_flags()
-print("\nParameters:")
-for attr, value in sorted(FLAGS.__flags.items()):
-    print("{}={}".format(attr.upper(), value))
-print("")
+def dump_all_flags():
+    FLAGS = tf.flags.FLAGS
+    FLAGS._parse_flags()
+    print("\nParameters:")
+    for attr, value in sorted(FLAGS.__flags.items()):
+        print("{}={}".format(attr.upper(), value))
+    print("")
+
+dump_all_flags()
 
 # Data Preparation
 # ==================================================
@@ -77,8 +80,8 @@ x_shuffled = x[shuffle_indices]
 y_shuffled = y[shuffle_indices]
 
 # TODO: This is very crude, should use cross-validation
-x_train, x_dev = x_shuffled[:-250000], x_shuffled[-250000:]
-y_train, y_dev = y_shuffled[:-250000], y_shuffled[-250000:]
+x_train, x_dev = x_shuffled[:-20000], x_shuffled[-20000:]
+y_train, y_dev = y_shuffled[:-20000], y_shuffled[-20000:]
 
 print("Vocabulary Size: {:d}".format(len(vocabulary)))
 print("Train/Dev split: {:d}/{:d}".format(len(y_train), len(y_dev)))
