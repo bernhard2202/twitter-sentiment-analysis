@@ -12,14 +12,14 @@ Examples:
                        only display the results of the most recent run.
 """
 
-# TODO(andrei): Support AWS.
+# TODO(andrei): Support AWS and Euler. Euler will probably not allow live
+# tensorboard preview, but that's OK.
 
 from __future__ import with_statement
 
 import os
 
 from fabric.api import *
-from fabric.contrib.console import confirm
 from fabric.contrib.project import rsync_project as rsync
 
 # TODO(andrei): Read from file.
@@ -31,9 +31,11 @@ env.hosts = [
 
 env.key_filename = '~/.ssh/google_compute_engine'
 
+
 def latest_run_id():
     # TODO(andrei): Nicer way of doing this?
     return "ls -t ~/deploy/data/runs | cat | head -n1"
+
 
 def train():
     # If something stops working, make sure you're 'rsync'ing everything you
@@ -67,8 +69,8 @@ def train():
 
     with cd('deploy'):
         # TODO(andrei): Pass these parameters as arguments to fabric.
-        run('python -m train_model --num_epochs 1' \
-            ' --batch_size 256 --evaluate_every 250' \
+        run('python -m train_model --num_epochs 1'
+            ' --batch_size 256 --evaluate_every 250'
             ' --checkpoint_every 1000 --output_every 50')
 
     local('mkdir -p data/runs/gce')
@@ -132,7 +134,10 @@ def host_type():
     # This runs on your machine.
     local('uname -a')
 
-    # This runs on the remote host(s) specified by the -H flag. If none
+    # This runs on the remote host(s) specified by the -H flag. If none are
     # specified, this runs on all 'env.hosts'.
     run('uname -a && lsb_release -a')
+    run('pwd')
+    with cd('/tmp'):
+        run('pwd')
 
