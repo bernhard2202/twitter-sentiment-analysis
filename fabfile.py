@@ -31,6 +31,10 @@ env.hosts = [
 
 env.key_filename = '~/.ssh/google_compute_engine'
 
+def latest_run_id():
+    # TODO(andrei): Nicer way of doing this?
+    return "ls -t ~/deploy/data/runs | cat | head -n1"
+
 def train():
     # If something stops working, make sure you're 'rsync'ing everything you
     # need to the remote host!
@@ -62,7 +66,7 @@ def train():
     print("Starting to train.")
 
     with cd('deploy'):
-        # TODO(andrei): Pass these as arguments to fabric.
+        # TODO(andrei): Pass these parameters as arguments to fabric.
         run('python -m train_model --num_epochs 1' \
             ' --batch_size 256 --evaluate_every 250' \
             ' --checkpoint_every 1000 --output_every 50')
@@ -70,7 +74,12 @@ def train():
     local('mkdir -p data/runs/gce')
 
     # This downloads the pipeline output.
-    get(remote_path='~/deploy/data/runs', local_path='data/runs/gce')
+    # TODO(andrei): Nicer folder structure
+    run('mkdir -p /tmp/last_tf_run')
+    run('cp -R ~/deploy/data/runs/$({})/ /tmp/last_tf_run'.format(latest_run_id()),
+        shell_escape=False, shell=False)
+    get(remote_path='/tmp/last_tf_run/*',
+        local_path='data/runs/gce')
     print("Downloaded the pipeline results.")
 
 
