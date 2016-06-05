@@ -4,8 +4,8 @@ import gensim
 import getopt
 import numpy as np
 import sys
-#from stop_words import get_stop_words
 
+#from stop_words import get_stop_words
 #stopwords = set(get_stop_words('en'))
 
 FULL_POS_FILE_NAME = "../data/train/train_pos_full.txt"
@@ -16,6 +16,7 @@ VALID_FILE_NAME = "../data/test/test_data.txt"
 VOCAB_FILE_NAME = "../data/preprocessing/vocab_cut.txt"
 WORD2VEC_FILE_NAME = "../data/word2vec/GoogleNews-vectors-negative300.bin"
 
+# TODO(andrei): set these automatically from the input files.
 VALID_SIZE = 10000
 FULL_TRAIN_SIZE = 2500000
 SMALL_TRAIN_SIZE = 200000
@@ -232,6 +233,7 @@ def main(argv):
     except getopt.GetoptError:
         usage()
         sys.exit(2)
+
     for opt, arg in opts:
         if opt in ("-f", "--full"):
             train_pos_file = FULL_POS_FILE_NAME

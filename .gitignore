@@ -8,3 +8,4 @@ __pycache__
 *.txt
 data/runs/*
 *.bin
+.idea

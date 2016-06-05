@@ -2,6 +2,7 @@ import pickle
 import tensorflow as tf
 import numpy as np
 
+
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
 tf.flags.DEFINE_integer("batch_size", 1, "Batch Size (default: 1)")
