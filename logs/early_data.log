@@ -1,0 +1,93 @@
+# Early experment data from before Andrei added support for automatic logging
+
+## Trial Run (10%, 10 epochs)
+# Final result: loss 0.374358, acc 0.83095
+
+# Last numbers on train set
+2016-06-04T13:25:31.256113: step 6600, loss 0.294409, acc 0.890625
+2016-06-04T13:26:10.379804: step 6700, loss 0.353572, acc 0.847656
+2016-06-04T13:26:49.310871: step 6800, loss 0.311447, acc 0.863281
+2016-06-04T13:27:28.382904: step 6900, loss 0.267641, acc 0.871094
+2016-06-04T13:28:07.437246: step 7000, loss 0.394571, acc 0.816406
+
+# Parameters:
+ALLOW_SOFT_PLACEMENT=True
+BATCH_SIZE=256
+CHECKPOINT_EVERY=2500
+DROPOUT_KEEP_PROB=0.5
+EMBEDDING_DIM=300
+EVALUATE_EVERY=500
+FILTER_SIZES=3,4,5
+L2_REG_LAMBDA=0.0
+LEARNING_RATE=0.0001
+LOG_DEVICE_PLACEMENT=False
+NUM_EPOCHS=10
+NUM_FILTERS=128
+OUTPUT_EVERY=100
+
+# Data
+Vocabulary Size: 19808
+Train/Dev split: 180000/20000
+
+# Location:
+/Users/andrei/workspace/cil/project/data/runs/1465036761
+
+
+## 1-epoch Trial Run (10%, 1 epoch)
+# Results:
+	loss 0.45329
+	acc 0.7788 (stddev 0.0403306)
+	(Tested on the full test set)
+
+# Parameters:
+ALLOW_SOFT_PLACEMENT=True
+BATCH_SIZE=256
+CHECKPOINT_EVERY=250
+DROPOUT_KEEP_PROB=0.5
+EMBEDDING_DIM=300
+EVALUATE_EVERY=250
+FILTER_SIZES=3,4,5
+L2_REG_LAMBDA=0.0
+LEARNING_RATE=0.0001
+LOG_DEVICE_PLACEMENT=False
+NUM_EPOCHS=1
+NUM_FILTERS=128
+OUTPUT_EVERY=50
+
+# Data
+Vocabulary Size: 19808
+Train/Dev split: 180000/20000
+Writing to /Users/andrei/workspace/cil/project/data/runs/1465057414
+
+2016-06-04T18:40:53.674645: step 550, loss 0.53919, acc 0.726562
+2016-06-04T18:41:15.329801: step 600, loss 0.513064, acc 0.761719
+2016-06-04T18:41:38.720034: step 650, loss 0.456982, acc 0.757812
+2016-06-04T18:41:59.273557: step 700, loss 0.537296, acc 0.734375
+
+
+## Trial Run on GCE (10%, 20 epochs)
+# Results:
+ <PENDING>
+
+# Parameters:
+# PENDING
+
+# Parameters:
+ALLOW_SOFT_PLACEMENT=True
+BATCH_SIZE=256
+CHECKPOINT_EVERY=1000
+DROPOUT_KEEP_PROB=0.5
+EMBEDDING_DIM=300
+EVALUATE_EVERY=250
+FILTER_SIZES=3,4,5
+L2_REG_LAMBDA=0.0
+LEARNING_RATE=0.0001
+LOG_DEVICE_PLACEMENT=False
+NUM_EPOCHS=20
+NUM_FILTERS=128
+OUTPUT_EVERY=100
+
+Vocabulary Size: 19808
+Train/Dev split: 180000/20000
+Writing to /home/andrei/deploy/data/runs/1465059045
+
