@@ -55,7 +55,7 @@ with graph.as_default():
         submission = open(filename, 'w+')
         print('Id,Prediction', file=submission)
         for id, pred in all_predictions:
-            if pred == 0:
+            if pred[0] >= 0.5:
                 print("%d,-1" % id,file=submission)
             else:
                 print("%d,1" % id,file=submission)
