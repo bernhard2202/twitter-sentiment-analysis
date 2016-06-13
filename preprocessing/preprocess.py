@@ -239,6 +239,10 @@ def main(argv):
             train_pos_file = FULL_POS_FILE_NAME
             train_neg_file = FULL_NEG_FILE_NAME
             train_size = FULL_TRAIN_SIZE
+            print("Using full vocabulary, and ALL training tweets.")
+        else:
+            print("Using full vocabulary, but only subset of tweets.")
+
         if opt in ("-s", "--sentence-length"):
             max_sentence_length = int(arg)
 
