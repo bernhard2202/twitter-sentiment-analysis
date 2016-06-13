@@ -67,19 +67,20 @@ def _run_euler():
 
     with cd('deploy'):
         # Creates a timestamped folder in which to run.
-        ts = '$(date +%Y%m%dT%H%m%S)'
+        ts = '$(date +%Y%m%dT%H%M%S)'
         # Hint: Replace the "heavy* 'train_model' call with 'tensor_hello' if
         # you just want to test things out.
         tf_command = ('t=' + ts + ' && mkdir $t && cd $t &&'
                       ' source ../euler_voodoo.sh &&'
                       # Use many cores and run for up to two hours.
-                      ' bsub -n 32 -W 2:00'
+                      ' bsub -n 48 -W 4:00'
                       ' LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/ext/lib" "$HOME"/ext/lib/ld-2.23.so "$HOME"/.venv/bin/python3'
                       # TODO(andrei): Pass these parameters as arguments to fabric.
-                        ' ../tensor_hello.py')
-                      # ' ../train_model.py --num_epochs 1'
-                      # ' --batch_size 256 --evaluate_every 250'
-                      # ' --checkpoint_every 1000 --output_every 100')
+                      #   ' ../tensor_hello.py')
+                      ' ../train_model.py --num_epochs 20'
+                      ' --data_root ../data'
+                      ' --batch_size 256 --evaluate_every 250'
+                      ' --checkpoint_every 1000 --output_every 50')
         run(tf_command, shell_escape=False, shell=False)
 
 

@@ -56,6 +56,9 @@ tf.flags.DEFINE_float("dev_ratio", 0.1, "Percentage of data used for validation.
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
 
+# File paths
+tf.flags.DEFINE_string("data_root", "./data", "Location of data folder.")
+
 FLAGS = tf.flags.FLAGS
 
 def dump_all_flags():
@@ -69,13 +72,15 @@ dump_all_flags()
 
 # Data Preparation
 # ==================================================
-with open('./data/preprocessing/vocab.pkl', 'rb') as f:
+pp = os.path.join(FLAGS.data_root, 'preprocessing')
+with open(os.path.join(pp, 'vocab.pkl'), 'rb') as f:
     vocabulary = pickle.load(f)
-with open('./data/preprocessing/vocab-inv.pkl', 'rb') as f:
+with open(os.path.join(pp, 'vocab-inv.pkl'), 'rb') as f:
     vocabulary_inv = pickle.load(f)
-x = np.load('./data/preprocessing/trainX.npy')
-y = np.load('./data/preprocessing/trainY.npy')
-embeddings = np.load('./data/preprocessing/embeddings.npy')
+
+x = np.load(os.path.join(pp, 'trainX.npy'))
+y = np.load(os.path.join(pp, 'trainY.npy'))
+embeddings = np.load(os.path.join(pp, 'embeddings.npy'))
 
 # Randomly shuffle data
 np.random.seed(datetime.datetime.now().microsecond)
@@ -140,7 +145,8 @@ with tf.Graph().as_default():
 
         # Output directory for models and summaries
         timestamp = str(int(time.time()))
-        out_dir = os.path.abspath(os.path.join(os.path.curdir, "./data/runs", timestamp))
+        # out_dir = os.path.abspath(os.path.join(os.path.curdir, "./data/runs", timestamp))
+        out_dir = os.path.abspath(os.path.join(FLAGS.data_root, 'runs', timestamp))
         print("Writing to {}\n".format(out_dir))
 
         # Summaries for loss and accuracy
@@ -256,6 +262,9 @@ with tf.Graph().as_default():
                 print("Performing final checkpoint...")
                 path = saver.save(sess, checkpoint_prefix, global_step=current_step)
                 print("Saved model checkpoint to {}\n".format(path))
+
+                print("Here's all the flags again:")
+                dump_all_flags()
 
         except KeyboardInterrupt:
             if current_step is None:
