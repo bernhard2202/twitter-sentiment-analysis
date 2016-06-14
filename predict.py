@@ -20,7 +20,10 @@ print("Vocabulary size: {:d}".format(len(vocabulary)))
 traindata = np.load('./data/preprocessing/validateX.npy')
 
 # checkpoint_file = "./data/runs/1462215568/checkpoints/model-246092"
-checkpoint_file = './data/runs/1465891958-prebuilt-w2v/checkpoints/model-131850'
+# This one (131k steps over full dataset) is likely to be quite overfit.
+# checkpoint_file = './data/runs/1465891958-prebuilt-w2v/checkpoints/model-131850'
+# 100k seems prety bad. 110-120k seems best at the moment.
+checkpoint_file = './data/runs/1465891958-prebuilt-w2v/checkpoints/model-100000'
 
 graph = tf.Graph()
 with graph.as_default():
@@ -53,6 +56,9 @@ with graph.as_default():
 
         print("Prediction done")
         print("Writing predictions to file...")
+
+        # TODO(andrei): For the love of god and all that is holy, INSERT A NEW
+        # TIMESTAMP EVERY TIME!
         filename = "./data/output/prediction_cnn_1462215568.csv"
         submission = open(filename, 'w+')
         print('Id,Prediction', file=submission)
