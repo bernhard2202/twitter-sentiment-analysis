@@ -16,26 +16,22 @@ from tensorflow.core.framework import summary_pb2
 def make_summary(name, val):
     return summary_pb2.Summary(value=[summary_pb2.Summary.Value(tag=name, simple_value=val)])
 
-
 def batch_iter(data, batch_size, num_epochs):
-    """
-    Generates a batch iterator for a data set.
-    """
+    """ Generates a batch iterator for a data set."""
     data_size = len(data)
     num_batches_per_epoch = int(data_size/batch_size) + 1
-    for epoch in range(num_epochs):
-        # Shuffle the data at each epoch
+    for epoch in range(num_epochs): # Shuffle the data at each epoch
         shuffled_indices = np.random.permutation(np.arange(data_size))
         shuffled_data = data[shuffled_indices]
+
         for batch_num in range(num_batches_per_epoch):
             start_index = batch_num * batch_size
             end_index = min((batch_num + 1) * batch_size, data_size)
             yield shuffled_data[start_index:end_index]
 
-
+# ==============================================================================
 # Parameters
-# ==================================================
-
+# ==============================================================================
 # Model Hyperparameters
 tf.flags.DEFINE_integer("embedding_dim", 300, "Dimensionality of character embedding (default: 300)")
 tf.flags.DEFINE_string("filter_sizes", "3,4,5", "Comma-separated filter sizes (default: '3,4,5')")
@@ -58,7 +54,6 @@ tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on 
 
 # File paths
 tf.flags.DEFINE_string("data_root", "./data", "Location of data folder.")
-
 FLAGS = tf.flags.FLAGS
 
 def dump_all_flags():
@@ -70,8 +65,9 @@ def dump_all_flags():
 
 dump_all_flags()
 
+# ==============================================================================
 # Data Preparation
-# ==================================================
+# ==============================================================================
 pp = os.path.join(FLAGS.data_root, 'preprocessing')
 with open(os.path.join(pp, 'vocab.pkl'), 'rb') as f:
     vocabulary = pickle.load(f)
