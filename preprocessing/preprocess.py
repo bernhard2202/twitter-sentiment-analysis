@@ -8,13 +8,21 @@ import sys
 #from stop_words import get_stop_words
 #stopwords = set(get_stop_words('en'))
 
+# TODO(andrei): Convert these to gflags as well.
+
 FULL_POS_FILE_NAME = "../data/train/train_pos_full.txt"
 FULL_NEG_FILE_NAME = "../data/train/train_neg_full.txt"
 POS_FILE_NAME = "../data/train/train_pos.txt"
 NEG_FILE_NAME = "../data/train/train_neg.txt"
 VALID_FILE_NAME = "../data/test/test_data.txt"
 VOCAB_FILE_NAME = "../data/preprocessing/vocab_cut.txt"
-WORD2VEC_FILE_NAME = "../data/word2vec/GoogleNews-vectors-negative300.bin"
+
+USE_LOCAL_W2V = True
+
+if USE_LOCAL_W2V:
+    WORD2VEC_FILE_NAME = "../data/word2vec/word2vec-local-gensim.bin"
+else:
+    WORD2VEC_FILE_NAME = "../data/word2vec/GoogleNews-vectors-negative300.bin"
 
 # TODO(andrei): set these automatically from the input files.
 VALID_SIZE = 10000
@@ -95,7 +103,18 @@ def pickle_word_embeddings(vocab):
     """
     pickle word embeddings
     """
-    model = gensim.models.word2vec.Word2Vec.load_word2vec_format(WORD2VEC_FILE_NAME, binary=True)
+    from gensim.models.word2vec import Word2Vec
+
+    # TODO(andrei): Support hybrid approach.
+    if USE_LOCAL_W2V:
+        print("Using locally-trained word2vec vectors from '{0}'.".format(
+            WORD2VEC_FILE_NAME))
+        model = Word2Vec.load(WORD2VEC_FILE_NAME)
+    else:
+        print("Using pre-trained word2vec vectors from '{0}'.".format(
+            WORD2VEC_FILE_NAME))
+        model = Word2Vec.load_word2vec_format(WORD2VEC_FILE_NAME, binary=True)
+
     # todo more elegant way
     embedding_dim = len(model['queen'])
     changed = 0
@@ -163,7 +182,7 @@ def prepare_data(train_pos_file, train_neg_file, train_size, vocab, max_sentence
                     if j == max_sentence_length:
                         cut += 1
                         # print("cut: "+line)
-                        # cut sentences longer than max sentence lenght
+                        # cut sentences longer than max sentence length
                         break
                 if j == 0:
                     empty += 1
@@ -181,7 +200,7 @@ def prepare_data(train_pos_file, train_neg_file, train_size, vocab, max_sentence
     assert pos == (len(train_Y) / 2)
     assert train_Y.shape[0] == train_X.shape[0] == i
 
-    print("{} tweets cut to max sentence lenght and {} tweets disapeared due to filtering."
+    print("{} tweets cut to max sentence length and {} tweets disapeared due to filtering."
           .format(cut, empty))
     return train_X, train_Y
 
@@ -206,13 +225,13 @@ def prepare_valid_data(max_sentence_length, vocab):
                 if j == max_sentence_length:
                     cut += 1
                     # print("cut: "+line)
-                    # cut sentences longer than max sentence lenght
+                    # cut sentences longer than max sentence length
                     break
             if j == 0:
                 #print(tweet)
                 empty += 1
             i += 1
-    print("Preprocessing done. {} tweets cut to max sentence lenght and {} tweets disapeared due to filtering."
+    print("Preprocessing done. {} tweets cut to max sentence length and {} tweets disapeared due to filtering."
           .format(cut, empty))
     return validate_x
 
@@ -252,12 +271,12 @@ def main(argv):
     print('Pickle word embeddings (this can take some time)..')
     pickle_word_embeddings(vocab)
 
-    print('prepare training data..')
+    print('Preparing training data...')
     X, Y = prepare_data(train_pos_file,train_neg_file, train_size, vocab, max_sentence_length)
     np.save('../data/preprocessing/trainX', X)
     np.save('../data/preprocessing/trainY', Y)
 
-    print('prepare validation data..')
+    print('Preparing validation data...')
     validate_x = prepare_valid_data(max_sentence_length, vocab)
     np.save('../data/preprocessing/validateX', validate_x)
 

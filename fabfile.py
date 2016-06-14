@@ -73,14 +73,14 @@ def _run_euler():
         tf_command = ('t=' + ts + ' && mkdir $t && cd $t &&'
                       ' source ../euler_voodoo.sh &&'
                       # Use many cores and run for up to two hours.
-                      ' bsub -n 48 -W 4:00'
+                      ' bsub -n 48 -W 12:00'
                       ' LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/ext/lib" "$HOME"/ext/lib/ld-2.23.so "$HOME"/.venv/bin/python3'
                       # TODO(andrei): Pass these parameters as arguments to fabric.
                       #   ' ../tensor_hello.py')
-                      ' ../train_model.py --num_epochs 20'
+                      ' ../train_model.py --num_epochs 15'
                       ' --data_root ../data'
-                      ' --batch_size 256 --evaluate_every 250'
-                      ' --checkpoint_every 1000 --output_every 50')
+                      ' --batch_size 256 --evaluate_every 1000'
+                      ' --checkpoint_every 20000 --output_every 500')
         run(tf_command, shell_escape=False, shell=False)
 
 
