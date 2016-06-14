@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 
-import getopt
 import pickle
-import sys
 
+from gensim.models.word2vec import Word2Vec
 import numpy as np
 # Use the Google flags library distributed with TensorFlow.
 import tensorflow as tf
@@ -114,8 +113,6 @@ def pickle_word_embeddings(vocab):
     """
     pickle word embeddings
     """
-    from gensim.models.word2vec import Word2Vec
-
     # TODO(andrei): Support hybrid approach.
     if FLAGS.pretrained_w2v:
         fname = FLAGS.pretrained_w2v_file

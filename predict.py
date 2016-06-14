@@ -19,7 +19,9 @@ print("Vocabulary size: {:d}".format(len(vocabulary)))
 
 traindata = np.load('./data/preprocessing/validateX.npy')
 
-checkpoint_file = "./data/runs/1462215568/checkpoints/model-246092"
+# checkpoint_file = "./data/runs/1462215568/checkpoints/model-246092"
+checkpoint_file = './data/runs/1465891958-prebuilt-w2v/checkpoints/model-131850'
+
 graph = tf.Graph()
 with graph.as_default():
     session_conf = tf.ConfigProto(
