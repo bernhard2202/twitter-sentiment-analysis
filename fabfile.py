@@ -68,8 +68,8 @@ def _run_euler():
     print("Uploaded data and code. Starting to train.")
 
     with cd('deploy'):
-        # TODO(andrei): Also train embeddings on validation data.
-        # TODO(andrei): Run on scratch instead of in '~'.
+        # TODO(andrei): Run on scratch instead of in '~', since the user root
+        # on Euler only has a quota of 20Gb.
         # Creates a timestamped folder in which to run.
         ts = '$(date +%Y%m%dT%H%M%S)'
         # Hint: Replace the "heavy" 'train_model' call with 'tensor_hello' if
@@ -83,10 +83,11 @@ def _run_euler():
                       ' -B'
                       ' LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/ext/lib" "$HOME"/ext/lib/ld-2.23.so "$HOME"/.venv/bin/python3'
                       # TODO(andrei): Pass these parameters as arguments to fabric.
-                      ' ../train_model.py --num_epochs 9'
+                      ' ../train_model.py --num_epochs 11'
                       ' --data_root ../data'
-                      ' --batch_size 256 --evaluate_every 2000'
-                      ' --checkpoint_every 20000 --output_every 1000')
+                      ' --learning_rate 0.000075'
+                      ' --batch_size 256 --evaluate_every 1000'
+                      ' --checkpoint_every 7500 --output_every 1000')
         run(tf_command, shell_escape=False, shell=False)
 
 

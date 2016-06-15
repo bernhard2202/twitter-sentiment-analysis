@@ -1,6 +1,8 @@
-import pickle
 import tensorflow as tf
 import numpy as np
+
+import pickle
+import time
 
 
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
@@ -23,7 +25,13 @@ traindata = np.load('./data/preprocessing/validateX.npy')
 # This one (131k steps over full dataset) is likely to be quite overfit.
 # checkpoint_file = './data/runs/1465891958-prebuilt-w2v/checkpoints/model-131850'
 # 100k seems prety bad. 110-120k seems best at the moment.
-checkpoint_file = './data/runs/1465891958-prebuilt-w2v/checkpoints/model-100000'
+# checkpoint_file = './data/runs/1465891958-prebuilt-w2v/checkpoints/model-100000'
+checkpoint_file = './data/runs/euler/1465939515/checkpoints/model-79110'
+
+timestamp = int(time.time())
+filename = "./data/output/prediction_cnn_{0}.csv".format(timestamp)
+print("Predicting using checkpoint file [{0}].".format(checkpoint_file))
+print("Will write predictions to file [{0}].".format(filename))
 
 graph = tf.Graph()
 with graph.as_default():
@@ -56,10 +64,6 @@ with graph.as_default():
 
         print("Prediction done")
         print("Writing predictions to file...")
-
-        # TODO(andrei): For the love of god and all that is holy, INSERT A NEW
-        # TIMESTAMP EVERY TIME!
-        filename = "./data/output/prediction_cnn_1462215568.csv"
         submission = open(filename, 'w+')
         print('Id,Prediction', file=submission)
         for id, pred in all_predictions:
@@ -67,4 +71,5 @@ with graph.as_default():
                 print("%d,-1" % id,file=submission)
             else:
                 print("%d,1" % id,file=submission)
+
         print("...done.")
