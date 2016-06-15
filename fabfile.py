@@ -35,7 +35,7 @@ def latest_run_id():
     return "ls -t ~/deploy/data/runs | cat | head -n1"
 
 
-# Hint: set your appropriate user for Euler in your '~/.ssh/config'!
+# Hint: set your appropriate user and host for Euler in your '~/.ssh/config'!
 @hosts('euler')
 def euler(sub='run'):
     # If something stops working, make sure you're 'rsync'ing everything you
@@ -69,7 +69,9 @@ def _run_euler():
 
     with cd('deploy'):
         # TODO(andrei): Run on scratch instead of in '~', since the user root
-        # on Euler only has a quota of 20Gb.
+        # on Euler only has a quota of 20Gb but scratch is fuckhuge.
+        # TODO(andrei): Warn when writing to scratch, since files in scratch get
+        # cleared out every 15 days.
         # Creates a timestamped folder in which to run.
         ts = '$(date +%Y%m%dT%H%M%S)'
         # Hint: Replace the "heavy" 'train_model' call with 'tensor_hello' if
@@ -102,7 +104,6 @@ def gce():
     print("Uploaded data and code. Starting to train.")
 
     with cd('deploy'):
-        # TODO(andrei): Pass these parameters as arguments to fabric.
         run('python -m train_model --num_epochs 20'
             ' --batch_size 256 --evaluate_every 250'
             ' --checkpoint_every 1000 --output_every 100')
