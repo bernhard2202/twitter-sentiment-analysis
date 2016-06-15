@@ -1,20 +1,38 @@
 #!/usr/bin/env python3
+
 import pickle
-import gensim
-import getopt
+
+from gensim.models.word2vec import Word2Vec
 import numpy as np
-import sys
+# Use the Google flags library distributed with TensorFlow.
+import tensorflow as tf
 
-#from stop_words import get_stop_words
-#stopwords = set(get_stop_words('en'))
-
+# TODO(andrei): Convert all these to gflags as well.
 FULL_POS_FILE_NAME = "../data/train/train_pos_full.txt"
 FULL_NEG_FILE_NAME = "../data/train/train_neg_full.txt"
 POS_FILE_NAME = "../data/train/train_pos.txt"
 NEG_FILE_NAME = "../data/train/train_neg.txt"
 VALID_FILE_NAME = "../data/test/test_data.txt"
 VOCAB_FILE_NAME = "../data/preprocessing/vocab_cut.txt"
-WORD2VEC_FILE_NAME = "../data/word2vec/GoogleNews-vectors-negative300.bin"
+
+tf.flags.DEFINE_boolean("pretrained_w2v", False, "Whether to use official Google pre-trained"
+                                                 " word2vec vectors, or locally-trained ones."
+                                                 " (default: False)")
+tf.flags.DEFINE_string("pretrained_w2v_file",
+                       "../data/word2vec/GoogleNews-vectors-negative300.bin",
+                       "The name of the pre-trained word2vec embedding file."
+                       " (default: ../data/word2vec/GoogleNews-vectors-negative300.bin")
+tf.flags.DEFINE_string("local_w2v_file",
+                       "../data/word2vec/word2vec-local-gensim.bin",
+                       "Name of the word2vec embedding file trained locally on"
+                       " the Twitter dataset.")
+tf.flags.DEFINE_boolean("full", False, "Whether to use the full Twitter dataset."
+                                       " (default: False)")
+tf.flags.DEFINE_integer("sentence_length", 30, "The maximum sentence length to"
+                                               " consider (in words)."
+                                               " (default: 30)")
+
+FLAGS = tf.flags.FLAGS
 
 # TODO(andrei): set these automatically from the input files.
 VALID_SIZE = 10000
@@ -95,12 +113,22 @@ def pickle_word_embeddings(vocab):
     """
     pickle word embeddings
     """
-    model = gensim.models.word2vec.Word2Vec.load_word2vec_format(WORD2VEC_FILE_NAME, binary=True)
+    # TODO(andrei): Support hybrid approach.
+    if FLAGS.pretrained_w2v:
+        fname = FLAGS.pretrained_w2v_file
+        print("Using pre-trained word2vec vectors from '{0}'.".format(fname))
+        model = Word2Vec.load_word2vec_format(fname, binary=True)
+    else:
+        fname = FLAGS.local_w2v_file
+        print("Using locally-trained word2vec vectors from '{0}'.".format(
+            fname))
+        model = Word2Vec.load(fname)
+
     # todo more elegant way
     embedding_dim = len(model['queen'])
     changed = 0
     X = np.random.uniform(-0.25, 0.25, size=(len(vocab), embedding_dim))
-    print("create word2vec lookup table..")
+    print("Creating word2vec lookup table...")
     for word in vocab:
         if word in model:
             changed += 1
@@ -163,7 +191,7 @@ def prepare_data(train_pos_file, train_neg_file, train_size, vocab, max_sentence
                     if j == max_sentence_length:
                         cut += 1
                         # print("cut: "+line)
-                        # cut sentences longer than max sentence lenght
+                        # cut sentences longer than max sentence length
                         break
                 if j == 0:
                     empty += 1
@@ -181,7 +209,7 @@ def prepare_data(train_pos_file, train_neg_file, train_size, vocab, max_sentence
     assert pos == (len(train_Y) / 2)
     assert train_Y.shape[0] == train_X.shape[0] == i
 
-    print("{} tweets cut to max sentence lenght and {} tweets disapeared due to filtering."
+    print("{} tweets cut to max sentence length and {} tweets disapeared due to filtering."
           .format(cut, empty))
     return train_X, train_Y
 
@@ -206,41 +234,54 @@ def prepare_valid_data(max_sentence_length, vocab):
                 if j == max_sentence_length:
                     cut += 1
                     # print("cut: "+line)
-                    # cut sentences longer than max sentence lenght
+                    # cut sentences longer than max sentence length
                     break
             if j == 0:
                 #print(tweet)
                 empty += 1
             i += 1
-    print("Preprocessing done. {} tweets cut to max sentence lenght and {} tweets disapeared due to filtering."
+    print("Preprocessing done. {} tweets cut to max sentence length and {} tweets disapeared due to filtering."
           .format(cut, empty))
     return validate_x
 
 
-def usage():
-    print("usage: preprocess.py  [--full] [--sentence-length=]")
-    print("\t--full use full data set")
-    print("\t--sentence-length= maximum sentence length")
+# def usage():
+#     print("usage: preprocess.py  [--full] [--sentence-length=]")
+#     print("\t--full use full data set")
+#     print("\t--sentence-length= maximum sentence length")
 
 
-def main(argv):
-    max_sentence_length = 30
-    train_pos_file = POS_FILE_NAME
-    train_neg_file = NEG_FILE_NAME
-    train_size = SMALL_TRAIN_SIZE
-    try:
-        opts, args = getopt.getopt(argv, "[fl:]", ["full", "sentence-length="])
-    except getopt.GetoptError:
-        usage()
-        sys.exit(2)
+def main():
+    max_sentence_length = FLAGS.sentence_length
 
-    for opt, arg in opts:
-        if opt in ("-f", "--full"):
-            train_pos_file = FULL_POS_FILE_NAME
-            train_neg_file = FULL_NEG_FILE_NAME
-            train_size = FULL_TRAIN_SIZE
-        if opt in ("-s", "--sentence-length"):
-            max_sentence_length = int(arg)
+    if FLAGS.full:
+        train_pos_file = FULL_POS_FILE_NAME
+        train_neg_file = FULL_NEG_FILE_NAME
+        train_size = FULL_TRAIN_SIZE
+        print("Using full vocabulary, and ALL training tweets.")
+    else:
+        train_pos_file = POS_FILE_NAME
+        train_neg_file = NEG_FILE_NAME
+        train_size = SMALL_TRAIN_SIZE
+        print("Using full vocabulary, but only subset of tweets.")
+
+    # try:
+    #     opts, args = getopt.getopt(argv, "[fl:]", ["full", "sentence-length="])
+    # except getopt.GetoptError:
+    #     usage()
+    #     sys.exit(2)
+
+    # for opt, arg in opts:
+    #     if opt in ("-f", "--full"):
+    #         train_pos_file = FULL_POS_FILE_NAME
+    #         train_neg_file = FULL_NEG_FILE_NAME
+    #         train_size = FULL_TRAIN_SIZE
+    #         print("Using full vocabulary, and ALL training tweets.")
+    #     else:
+    #         print("Using full vocabulary, but only subset of tweets.")
+    #
+    #     if opt in ("-s", "--sentence-length"):
+    #         max_sentence_length = int(arg)
 
     print('Pickle vocabulary..')
     vocab = pickle_vocab()
@@ -248,15 +289,15 @@ def main(argv):
     print('Pickle word embeddings (this can take some time)..')
     pickle_word_embeddings(vocab)
 
-    print('prepare training data..')
+    print('Preparing training data...')
     X, Y = prepare_data(train_pos_file,train_neg_file, train_size, vocab, max_sentence_length)
     np.save('../data/preprocessing/trainX', X)
     np.save('../data/preprocessing/trainY', Y)
 
-    print('prepare validation data..')
+    print('Preparing validation data...')
     validate_x = prepare_valid_data(max_sentence_length, vocab)
     np.save('../data/preprocessing/validateX', validate_x)
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()

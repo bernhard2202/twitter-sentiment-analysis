@@ -9,3 +9,5 @@ __pycache__
 data/runs/*
 *.bin
 .idea
+data/word2vec/twitter-full/
+data/word2vec/.ipynb_checkpoints
