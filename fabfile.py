@@ -74,12 +74,12 @@ def _run_aws():
     with cd('deploy'):
         ts = '$(date +%Y%m%dT%H%M%S)'
         tf_command = ('t=' + ts + ' && mkdir $t && cd $t &&'
-                      'python ../train_model.py --num_epochs 1'
+                      'python ../train_model.py --num_epochs 15'
                       ' --filter_sizes "3,4,5,7" '
                       ' --data_root ../data'
                       ' --learning_rate 0.0001'
-                      ' --batch_size 256 --evaluate_every 2500'
-                      ' --checkpoint_every 7500 --output_every 100')
+                      ' --batch_size 256 --evaluate_every 1000'
+                      ' --checkpoint_every 7500 --output_every 500')
         _in_screen(tf_command, shell_escape=False, shell=False)
 
 
@@ -190,7 +190,9 @@ def tensorboard():
 
 
 def _in_screen(cmd, **kw):
-    screen = "screen -dmS tensorboard_screen bash -c '{}'".format(cmd)
+    # The final 'exec bash' prevents the screen from terminating when the
+    # command exits.
+    screen = "screen -dmS tensorboard_screen bash -c '{} ; exec bash'".format(cmd)
     print(screen)
     run(screen, pty=False, **kw)
 
