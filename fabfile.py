@@ -56,6 +56,33 @@ def euler(sub='run'):
         raise ValueError("Unknown Euler action: {0}".format(sub))
 
 
+@hosts('aws-cil-gpu')
+def aws(sub='run'):
+    if sub == 'run':
+        # TODO(andrei): Ideally you'd want to unify this with '_run_euler'.
+        _run_aws()
+    else:
+        raise ValueError("Unknown AWS action: {0}".format(sub))
+
+
+def _run_aws():
+    print("Will train TF model remotely on an AWS GPU instance.")
+    print("Yes, this will cost you real $$$.")
+
+    sync_data_and_code()
+
+    with cd('deploy'):
+        ts = '$(date +%Y%m%dT%H%M%S)'
+        tf_command = ('t=' + ts + ' && mkdir $t && cd $t &&'
+                      'python ../train_model.py --num_epochs 1'
+                      ' --filter_sizes "3,4,5,7" '
+                      ' --data_root ../data'
+                      ' --learning_rate 0.0001'
+                      ' --batch_size 256 --evaluate_every 2500'
+                      ' --checkpoint_every 7500 --output_every 100')
+        _in_screen(tf_command, shell_escape=False, shell=False)
+
+
 def _run_euler():
     print("Will train TF model remotely on Euler.")
     sync_data_and_code()
@@ -159,9 +186,13 @@ def tensorboard():
 
     with cd('deploy'):
         tb_cmd = 'tensorboard --logdir data/runs'
-        screen = "screen -dmS tensorboard_screen bash -c '{}'".format(tb_cmd)
-        print(screen)
-        run(screen, pty=False)
+        _in_screen(tb_cmd)
+
+
+def _in_screen(cmd, **kw):
+    screen = "screen -dmS tensorboard_screen bash -c '{}'".format(cmd)
+    print(screen)
+    run(screen, pty=False, **kw)
 
 
 def latest_tb():
