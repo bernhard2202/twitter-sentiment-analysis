@@ -9,6 +9,7 @@
 
 ## Experiments to do
  * Embedding size 400 (will be slower to train).
+ * Submit local-trained 225-d results to kaggle. Should be worse than 275-d.
  * Keep embeddings at 300 or 350 and use larger filter size.
  * Moar preprocessing.
  * Another convolution layer?

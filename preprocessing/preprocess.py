@@ -31,6 +31,7 @@ tf.flags.DEFINE_boolean("full", False, "Whether to use the full Twitter dataset.
 tf.flags.DEFINE_integer("sentence_length", 30, "The maximum sentence length to"
                                                " consider (in words)."
                                                " (default: 30)")
+tf.flags.DEFINE_boolean("split_hashtags", True, "Whether to attempt to split hashtags.")
 
 FLAGS = tf.flags.FLAGS
 
@@ -44,9 +45,10 @@ def word_filter(word):
     word = ''.join(i for i in word if not i.isdigit())
     if len(word) < 2:
         return None
+
     # remove hashtags in beginning
-    if word[0] == '#':
-        return None
+    # if word[0] == '#':
+    #     return None
     #    word = word[1:]
 
     # stopwords
@@ -143,14 +145,27 @@ def handle_hashtags(line, vocab):
     for word in line.split():
         if word[0] == '#':
             word = word[1:]
+
+            # TODO(andrei): Porque no los dos? Option to keep both split words
+            # and original hashtag.
+            if not FLAGS.split_hashtags:
+                # Just return the hashtag minus the '#' symbol if we don't want
+                # to split it.
+                return word
+
             length = len(word)
             word_result = []
-            claimed = np.full(length, False, dtype=bool)  #initially all letters are free to select
-            for n in range(length, 0, -1):  #initially search for words with n letters, then n-1,... until 1 letter words
-                for s in range(0, length-n+1):  #starting point. so we examine substring  [s,s+n)
+            # initially all letters are free to select
+            claimed = np.full(length, False, dtype=bool)
+            # initially search for words with n letters, then n-1,... until 1
+            # letter words
+            for n in range(length, 0, -1):
+                # starting point. so we examine substring  [s,s+n)
+                for s in range(0, length-n+1):
                     substring = word[s:s+n]
                     if substring in vocab:
-                        if ~np.any(claimed[s:s+n]):   #nothing is claimed so take it
+                        if ~np.any(claimed[s:s+n]):
+                            # nothing is claimed so take it
                             claimed[s:s+n] = True
                             word_result.append((s, substring))
             word_result.sort()
