@@ -85,10 +85,11 @@ def _run_euler():
                       ' -B'
                       ' LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/ext/lib" "$HOME"/ext/lib/ld-2.23.so "$HOME"/.venv/bin/python3'
                       # TODO(andrei): Pass these parameters as arguments to fabric.
-                      ' ../train_model.py --num_epochs 11'
+                      ' ../train_model.py --num_epochs 10'
+                      #' --filter_sizes "3,4,5,7"'
                       ' --data_root ../data'
                       ' --learning_rate 0.000075'
-                      ' --batch_size 256 --evaluate_every 1000'
+                      ' --batch_size 256 --evaluate_every 2500'
                       ' --checkpoint_every 7500 --output_every 1000')
         run(tf_command, shell_escape=False, shell=False)
 

@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 
 import pickle
+import socket
 import time
 
 
@@ -26,10 +27,13 @@ traindata = np.load('./data/preprocessing/validateX.npy')
 # checkpoint_file = './data/runs/1465891958-prebuilt-w2v/checkpoints/model-131850'
 # 100k seems prety bad. 110-120k seems best at the moment.
 # checkpoint_file = './data/runs/1465891958-prebuilt-w2v/checkpoints/model-100000'
-checkpoint_file = './data/runs/euler/1465939515/checkpoints/model-79110'
+# Not last checkpoint, but worse than final one.
+# checkpoint_file = './data/runs/euler/local-w2v-350d-1466025108/checkpoints/model-82500'
+checkpoint_file = './data/runs/euler//local-w2v-275d-1466050948/checkpoints/model-96690'
 
 timestamp = int(time.time())
 filename = "./data/output/prediction_cnn_{0}.csv".format(timestamp)
+meta_filename = "{0}.meta".format(filename)
 print("Predicting using checkpoint file [{0}].".format(checkpoint_file))
 print("Will write predictions to file [{0}].".format(filename))
 
@@ -72,4 +76,9 @@ with graph.as_default():
             else:
                 print("%d,1" % id,file=submission)
 
+        with open(meta_filename, 'w') as mf:
+            print("Generated from checkpoint: {0}".format(checkpoint_file), file=mf)
+            print("Hostname: {0}".format(socket.gethostname()), file=mf)
+
         print("...done.")
+        print("Wrote predictions to: {0}".format(filename))

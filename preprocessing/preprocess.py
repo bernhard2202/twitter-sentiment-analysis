@@ -70,7 +70,7 @@ def filter_with_voc(word, voc):
         return None
 
 
-def pickle_vocab():
+def pickle_vocab(file_prefix):
     """
     pickle vocabulary
     """
@@ -99,9 +99,9 @@ def pickle_vocab():
     # sanity check
     assert len(vocab) == (len(words) + 1) == len(vocab_inv)
 
-    with open('../data/preprocessing/vocab.pkl', 'wb') as f:
+    with open('../data/preprocessing/{}-vocab.pkl'.format(file_prefix), 'wb') as f:
         pickle.dump(vocab, f, protocol=2)
-    with open('../data/preprocessing/vocab-inv.pkl', 'wb') as f:
+    with open('../data/preprocessing/{}-vocab-inv.pkl'.format(file_prefix), 'wb') as f:
         pickle.dump(vocab_inv, f, protocol=2)
     print("Vocabulary pickled.")
     print("Total number of unique words = {}; words filterd by preprocessing = {}".format(len(vocab), (i - index)))
@@ -109,7 +109,7 @@ def pickle_vocab():
     return vocab
 
 
-def pickle_word_embeddings(vocab):
+def pickle_word_embeddings(vocab, file_prefix):
     """
     pickle word embeddings
     """
@@ -133,13 +133,12 @@ def pickle_word_embeddings(vocab):
         if word in model:
             changed += 1
             X[vocab[word]] = model[word]
-    np.save('../data/preprocessing/embeddings', X)
+    np.save('../data/preprocessing/{}-embeddings'.format(file_prefix), X)
     print("Embeddings pickled.")
     print("Used {} pre-trained word2vec vectors and {} new random vectors.".format(changed, (len(vocab) - changed)))
 
 
-
-def handle_hashtags(line,vocab):
+def handle_hashtags(line, vocab):
     result_line = []
     for word in line.split():
         if word[0] == '#':
@@ -258,11 +257,13 @@ def main():
         train_pos_file = FULL_POS_FILE_NAME
         train_neg_file = FULL_NEG_FILE_NAME
         train_size = FULL_TRAIN_SIZE
+        prefix = "full"
         print("Using full vocabulary, and ALL training tweets.")
     else:
         train_pos_file = POS_FILE_NAME
         train_neg_file = NEG_FILE_NAME
         train_size = SMALL_TRAIN_SIZE
+        prefix = "subset"
         print("Using full vocabulary, but only subset of tweets.")
 
     # try:
@@ -284,19 +285,19 @@ def main():
     #         max_sentence_length = int(arg)
 
     print('Pickle vocabulary..')
-    vocab = pickle_vocab()
+    vocab = pickle_vocab(prefix)
 
     print('Pickle word embeddings (this can take some time)..')
-    pickle_word_embeddings(vocab)
+    pickle_word_embeddings(vocab, prefix)
 
     print('Preparing training data...')
     X, Y = prepare_data(train_pos_file,train_neg_file, train_size, vocab, max_sentence_length)
-    np.save('../data/preprocessing/trainX', X)
-    np.save('../data/preprocessing/trainY', Y)
+    np.save('../data/preprocessing/{0}-trainX'.format(prefix), X)
+    np.save('../data/preprocessing/{0}-trainY'.format(prefix), Y)
 
     print('Preparing validation data...')
     validate_x = prepare_valid_data(max_sentence_length, vocab)
-    np.save('../data/preprocessing/validateX', validate_x)
+    np.save('../data/preprocessing/validateX'.format(prefix), validate_x)
 
 
 if __name__ == "__main__":

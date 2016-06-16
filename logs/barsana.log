@@ -1,0 +1,14 @@
+# Default LR was 0.0001.
+# Set LR = 0.000075 but doesn't seem to affect the training.
+# Set LR = 0.001 and the results were shit.
+
+# Set embedding size == 350. Results worse than pre-trained w2v.
+# Set embedding size == 275. Results even worse.
+# Set embedding size == 225. Pending.
+
+
+## Experiments to do
+ * Embedding size 400 (will be slower to train).
+ * Keep embeddings at 300 or 350 and use larger filter size.
+ * Moar preprocessing.
+ * Another convolution layer?

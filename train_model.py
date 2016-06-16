@@ -15,6 +15,7 @@ from tensorflow.core.framework import summary_pb2
 def make_summary(name, val):
     return summary_pb2.Summary(value=[summary_pb2.Summary.Value(tag=name, simple_value=val)])
 
+
 def batch_iter(data, batch_size, num_epochs):
     """ Generates a batch iterator for a data set."""
     data_size = len(data)
@@ -52,6 +53,9 @@ tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on 
 
 # File paths
 tf.flags.DEFINE_string("data_root", "./data", "Location of data folder.")
+tf.flags.DEFINE_string("data_prefix", "full", "Prefix of preprocessed files (e.g. trainX, trainY, embeddings, etc.)."
+                                              " Useful for differentiating between inputs containing *all* training"
+                                              " data, and ones computed only over a subset.")
 FLAGS = tf.flags.FLAGS
 
 def dump_all_flags():
@@ -67,14 +71,20 @@ dump_all_flags()
 # Data Preparation
 # ==============================================================================
 pp = os.path.join(FLAGS.data_root, 'preprocessing')
-with open(os.path.join(pp, 'vocab.pkl'), 'rb') as f:
+prefix = FLAGS.data_prefix
+
+print("Data root is: {0}.".format(FLAGS.data_root))
+print("Actual files in: {0}.".format(pp))
+print("Using input data file prefix: {0}.".format(prefix))
+
+with open(os.path.join(pp, '{0}-vocab.pkl'.format(prefix)), 'rb') as f:
     vocabulary = pickle.load(f)
-with open(os.path.join(pp, 'vocab-inv.pkl'), 'rb') as f:
+with open(os.path.join(pp, '{0}-vocab-inv.pkl'.format(prefix)), 'rb') as f:
     vocabulary_inv = pickle.load(f)
 
-x = np.load(os.path.join(pp, 'trainX.npy'))
-y = np.load(os.path.join(pp, 'trainY.npy'))
-embeddings = np.load(os.path.join(pp, 'embeddings.npy'))
+x = np.load(os.path.join(pp, '{0}-trainX.npy'.format(prefix)))
+y = np.load(os.path.join(pp, '{0}-trainY.npy'.format(prefix)))
+embeddings = np.load(os.path.join(pp, '{0}-embeddings.npy'.format(prefix)))
 
 # Randomly shuffle data
 np.random.seed(datetime.datetime.now().microsecond)
@@ -98,6 +108,8 @@ print("Train/Dev split: {:d}/{:d}".format(len(y_train), len(y_dev)))
 
 # This splits the test data into chunks to lower memory pressure during
 # validation.
+# TODO(andrei): On Euler we normally have ~40Gb of RAM. Could we increase this
+# number then?
 test_split = 200
 x_dev = np.split(x_dev, test_split)
 y_dev = np.split(y_dev, test_split)
