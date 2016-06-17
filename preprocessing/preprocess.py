@@ -144,15 +144,15 @@ def handle_hashtags(line, vocab):
     result_line = []
     for word in line.split():
         if word[0] == '#':
-            word = word[1:]
-
             # TODO(andrei): Porque no los dos? Option to keep both split words
             # and original hashtag.
             if not FLAGS.split_hashtags:
-                # Just return the hashtag minus the '#' symbol if we don't want
-                # to split it.
-                return word
+                # Just return the full original hashtag if we don't want to
+                # split it.
+                result_line.append(word)
+                continue
 
+            word = word[1:]
             length = len(word)
             word_result = []
             # initially all letters are free to select
