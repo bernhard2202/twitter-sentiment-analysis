@@ -31,7 +31,7 @@ def main():
                     print(line_cnt)
 
                 result = []   # here we accumulate the result line after the processing
-                for word in line.split():
+                for word_index, word in enumerate(line.split()):
                     if word[0] == '#':
                         temp = re.sub(num, "<num>", word)
                         result.append(temp)
@@ -59,11 +59,27 @@ def main():
                         result.append("<alphanum>")
                         #print("{}\t\t-->\t\t{}".format(word, "<alphanum>"))
                     else:
-                        temp = re.sub(num, "<num>", word)
-                        result.append(temp)
-                        if temp != word:
-                            pass
-                            #print("{}\t\t-->\t\t{}".format(word, temp))
+                        if fin == TEST_ORIG_FILE_NAME and word_index == 1:
+                            # The test data file is indexed, unlike the positive
+                            # and negative training ones. We don't want to
+                            # replace the index with <num>!
+                            searched_part = word[(word.index(',') + 1):]
+
+                            # Since 're.sub' will only substitute in the
+                            # 'searched_part', we want to make sure we don't
+                            # forget to add the first part of the line to the
+                            # output.
+                            result_chunk = word[0:word.index(',') + 1]
+                        else:
+                            searched_part = word
+                            result_chunk = ""
+
+                        temp = re.sub(num, "<num>", searched_part)
+                        result_chunk += temp
+                        result.append(result_chunk)
+
+                        # if temp != word:
+                        #     print("{}\t\t-->\t\t{}".format(word, temp))
 
 
                 # check some specific patterns in line. probably useless
