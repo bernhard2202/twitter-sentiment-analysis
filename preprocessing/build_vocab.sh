@@ -1,11 +1,53 @@
 #!/usr/bin/env bash
 
+# Data files (train and test).
 posFile="../data/train/train_pos_full.txt"
 negFile="../data/train/train_neg_full.txt"
 testFile="../data/test/test_data.txt"
+
+# Backups of the original data files.
+posFileBak="../data/train/train_pos_full_orig.txt"
+negFileBak="../data/train/train_neg_full_orig.txt"
+testFileBak="../data/test/test_data_orig.txt"
+
+# Output files.
 vocabFile="../data/preprocessing/vocab.txt"
+cutVocabFile="../data/preprocessing/vocab_cut.txt"
 
 # Note that this script uses GNU-style sed. On Mac OS, you are required to first
 #    brew install gnu-sed --with-default-names
+#original
+#cat "$posFile" "$negFile" "$testFile" | sed "s/ /\n/g" |
+#    grep -v "^\s*$" | sort | uniq -c > "$vocabFile"
+
+#modified
+if [ ! -f "$posFileBak" ]; then
+    echo "Creating copy of positive training file [$posFile] as [$posFileBak]."
+    mv "$posFile" "$posFileBak"
+    #mv ../data/train/train_pos_full.txt ../data/train/train_pos_full_orig.txt
+fi
+if [ ! -f "$negFileBak" ]; then
+    echo "Creating copy of negative training file [$negFile] as [$negFileBak]."
+    mv "$negFile" "$negFileBak"
+    #mv ../data/train/train_neg_full.txt ../data/train/train_neg_full_orig.txt
+fi
+if [ ! -f "$testFileBak" ]; then
+    echo "Creating copy of test file [$testFile] as [$testFileBak]."
+    mv "$testFile" "$testFileBak"
+    #mv ../data/test/test_data.txt ../data/test/test_data_orig.txt
+fi
+
+# TODO(andrei): Consider renaming this step to something more descriptive.
+# Run the first stage of preprocessing right away: this does some smart
+# substitutions, like replacing numbers with '<num>' tokens.
+python3 preprocess_step1.py
+
+# Then generate the vocabulary.
 cat "$posFile" "$negFile" "$testFile" | sed "s/ /\n/g" |
-    grep -v "^\s*$" | sort | uniq -c > "$vocabFile"
+  grep -v "^\s*$" | sort | uniq -c > "$vocabFile"
+
+#cat ../data/train/train_pos_full.txt ../data/train/train_neg_full.txt ../data/test/test_data.txt | sed "s/ /\n/g" | grep -v "^\s*$" | sort | uniq -c > ../data/preprocessing/vocab.txt
+
+# And do the cutting right away (no need for second script).
+cat "$vocabFile" | sed "s/^\s\+//g" | sort -rn > "$cutVocabFile"
+#cat ../data/preprocessing/vocab.txt | sed "s/^\s\+//g" | sort -rn > ../data/preprocessing/vocab_cut.txt

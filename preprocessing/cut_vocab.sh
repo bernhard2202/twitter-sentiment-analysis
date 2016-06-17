@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo "This script is no longer necessary."
+exit 1
+
 # Note that this script uses GNU-style sed. On Mac OS, you are required to first
 #    brew install gnu-sed --with-default-names
 #
