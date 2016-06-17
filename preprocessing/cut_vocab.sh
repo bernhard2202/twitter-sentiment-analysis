@@ -1,7 +1,7 @@
 #!/bin/bash
 
-echo "This script is no longer necessary."
-exit 1
+echo "Warning: make sure you know what you're doing. 'build_vocab.sh' should" \
+  " already be doing this!"
 
 # Note that this script uses GNU-style sed. On Mac OS, you are required to first
 #    brew install gnu-sed --with-default-names

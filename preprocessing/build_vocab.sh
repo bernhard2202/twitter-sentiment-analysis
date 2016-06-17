@@ -23,23 +23,24 @@ cutVocabFile="../data/preprocessing/vocab_cut.txt"
 #modified
 if [ ! -f "$posFileBak" ]; then
     echo "Creating copy of positive training file [$posFile] as [$posFileBak]."
-    mv "$posFile" "$posFileBak"
+    cp "$posFile" "$posFileBak"
     #mv ../data/train/train_pos_full.txt ../data/train/train_pos_full_orig.txt
 fi
 if [ ! -f "$negFileBak" ]; then
     echo "Creating copy of negative training file [$negFile] as [$negFileBak]."
-    mv "$negFile" "$negFileBak"
+    cp "$negFile" "$negFileBak"
     #mv ../data/train/train_neg_full.txt ../data/train/train_neg_full_orig.txt
 fi
 if [ ! -f "$testFileBak" ]; then
     echo "Creating copy of test file [$testFile] as [$testFileBak]."
-    mv "$testFile" "$testFileBak"
+    cp "$testFile" "$testFileBak"
     #mv ../data/test/test_data.txt ../data/test/test_data_orig.txt
 fi
 
 # TODO(andrei): Consider renaming this step to something more descriptive.
 # Run the first stage of preprocessing right away: this does some smart
 # substitutions, like replacing numbers with '<num>' tokens.
+#echo 'NOT doing preprocessing step #1!!!'
 python3 preprocess_step1.py
 
 echo 'Finished preprocessing step #1.'

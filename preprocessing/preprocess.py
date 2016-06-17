@@ -23,7 +23,7 @@ tf.flags.DEFINE_string("pretrained_w2v_file",
                        "The name of the pre-trained word2vec embedding file."
                        " (default: ../data/word2vec/GoogleNews-vectors-negative300.bin")
 tf.flags.DEFINE_string("local_w2v_file",
-                       "../data/word2vec/word2vec-local-gensim.bin",
+                       None,
                        "Name of the word2vec embedding file trained locally on"
                        " the Twitter dataset.")
 tf.flags.DEFINE_boolean("full", False, "Whether to use the full Twitter dataset."
@@ -31,7 +31,12 @@ tf.flags.DEFINE_boolean("full", False, "Whether to use the full Twitter dataset.
 tf.flags.DEFINE_integer("sentence_length", 30, "The maximum sentence length to"
                                                " consider (in words)."
                                                " (default: 30)")
+# TODO(andrei): Unify this part with Nikos's advanced second stage of corrections.
 tf.flags.DEFINE_boolean("split_hashtags", True, "Whether to attempt to split hashtags.")
+tf.flags.DEFINE_boolean("vocab_has_counts", False,
+                        "Whether the cut vocabulary file given also contains"
+                        " each token's counts. This is the case when using"
+                        " Nikos's preprocessing scheme.")
 
 FLAGS = tf.flags.FLAGS
 
@@ -73,7 +78,7 @@ def filter_with_voc(word, voc):
         return None
 
 
-def pickle_vocab(file_prefix, has_counts=True):
+def pickle_vocab(file_prefix, has_counts):
     """
     pickle vocabulary
 
@@ -120,11 +125,14 @@ def pickle_vocab(file_prefix, has_counts=True):
     # sanity check
     assert len(vocab) == (len(words) + 1) == len(vocab_inv)
 
-    with open('../data/preprocessing/{}-vocab.pkl'.format(file_prefix), 'wb') as f:
+    vocab_fname = '../data/preprocessing/{}-vocab.pkl'.format(file_prefix)
+    vocab_inv_fname = '../data/preprocessing/{}-vocab-inv.pkl'.format(file_prefix)
+    with open(vocab_fname, 'wb') as f:
         pickle.dump(vocab, f, protocol=2)
-    with open('../data/preprocessing/{}-vocab-inv.pkl'.format(file_prefix), 'wb') as f:
+    with open(vocab_inv_fname, 'wb') as f:
         pickle.dump(vocab_inv, f, protocol=2)
-    print("Vocabulary pickled.")
+
+    print("Vocabulary pickled in [{}] and [{}].".format(vocab_fname, vocab_inv_fname))
     print("Total number of unique words = {}; words filterd by preprocessing = {}".format(len(vocab), (i - index)))
 
     return vocab
@@ -158,6 +166,9 @@ def pickle_word_embeddings(vocab, file_prefix):
     print("Corpus size:           {0}".format(model.corpus_count))
     print("Vector dimensionality: {0}".format(embedding_dim))
     print("Vocabulary size:       {0}".format(len(model.vocab.keys())))
+
+    print("Sample from w2v model: ", list(model.vocab.keys())[:25])
+    print("Sample from vocabulary:", list(list(vocab.keys())[:25]))
 
     for word in vocab:
         if word in model:
@@ -330,7 +341,7 @@ def main():
     #         max_sentence_length = int(arg)
 
     print('Pickle vocabulary..')
-    vocab = pickle_vocab(prefix)
+    vocab = pickle_vocab(prefix, FLAGS.vocab_has_counts)
 
     print('Pickle word embeddings (this can take some time)..')
     pickle_word_embeddings(vocab, prefix)

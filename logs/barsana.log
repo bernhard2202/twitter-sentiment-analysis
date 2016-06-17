@@ -4,8 +4,10 @@
 
 # Set embedding size == 350. Results worse than pre-trained w2v.
 # Set embedding size == 275. Results even worse.
-# Set embedding size == 225. Pending.
+# Set embedding size == 225. Yep, even worse.
 
+* Embedding size == 350
+    * 3,4,5,7 filter sizes and 256 of each. (0.85580)
 
 ## Experiments to do
  * Embedding size 400 (will be slower to train).
