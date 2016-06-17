@@ -29,6 +29,7 @@ def main():
                 line_cnt += 1
                 if line_cnt % 10000 == 0:
                     print(line_cnt)
+
                 result = []   # here we accumulate the result line after the processing
                 for word in line.split():
                     if word[0] == '#':
@@ -39,7 +40,8 @@ def main():
                             #print("{}\t\t-->\t\t{}".format(word, temp))
                         continue
 
-                    # handle specific exceptions. like <3 we don't want it to be converted to <<num>
+                    # handle specific exceptions. like <3 we don't want it to be converted to <num>
+                    # TODO(andrei): Extract this as a separate list of custom emoticons.
                     if word in ["<3"]:  # exception list
                         result.append(word)
                         continue
@@ -72,7 +74,6 @@ def main():
                     result.append("<adv2>")
 
                 out.write(' '.join(result) + "\n")
-
 
 
 if __name__ == "__main__":

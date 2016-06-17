@@ -42,12 +42,17 @@ fi
 # substitutions, like replacing numbers with '<num>' tokens.
 python3 preprocess_step1.py
 
-# Then generate the vocabulary.
+echo 'Finished preprocessing step #1.'
+
+echo 'Building vocabulary...'
 cat "$posFile" "$negFile" "$testFile" | sed "s/ /\n/g" |
   grep -v "^\s*$" | sort | uniq -c > "$vocabFile"
 
 #cat ../data/train/train_pos_full.txt ../data/train/train_neg_full.txt ../data/test/test_data.txt | sed "s/ /\n/g" | grep -v "^\s*$" | sort | uniq -c > ../data/preprocessing/vocab.txt
 
-# And do the cutting right away (no need for second script).
+# Do the cutting right away (no need for second script).
+echo 'Cutting vocabulary into tokens...'
 cat "$vocabFile" | sed "s/^\s\+//g" | sort -rn > "$cutVocabFile"
 #cat ../data/preprocessing/vocab.txt | sed "s/^\s\+//g" | sort -rn > ../data/preprocessing/vocab_cut.txt
+
+echo 'Finished vocabulary processing.'

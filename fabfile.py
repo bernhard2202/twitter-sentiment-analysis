@@ -142,13 +142,13 @@ def gce():
 def sync_data_and_code():
     run('mkdir -p ~/deploy/data/preprocessing')
 
+    # Ensure we have a trailing slash for rsync to work as intended.
     folder = os.path.join('data', 'preprocessing') + '/'
-    # This does no tilde expansion, and this is what we want.
+    # 'os.path.join' does no tilde expansion, and this is what we want.
     remote_folder = os.path.join('~/deploy', folder)
 
     # This syncs the data (needs to be preprocessed in advance).
-    rsync(local_dir=folder, remote_dir=remote_folder,
-          exclude=['*.txt'])
+    rsync(local_dir=folder, remote_dir=remote_folder, exclude=['*.txt'])
 
     put(local_path='./train_model.py',
         remote_path=os.path.join('~/deploy', 'train_model.py'))
