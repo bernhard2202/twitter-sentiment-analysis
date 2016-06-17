@@ -8,6 +8,7 @@ FULL_POS_FILE_NAME = "../data/train/train_pos_full.txt"
 FULL_NEG_FILE_NAME = "../data/train/train_neg_full.txt"
 TEST_FILE_NAME = "../data/test/test_data.txt"
 
+
 def main():
     # patterns for handling numbers
     digit_char_digit = re.compile(r"\d+([a-z]+)\d+")      # substitute with <alphanum>
@@ -18,9 +19,8 @@ def main():
     adv1_pattern = re.compile(r"\([^\(\)]*\.\.\.\s<url>$")
     adv2_pattern = re.compile(r"\([^\(\)]*\s<url>$")
 
-
-    # for fin, fout in [("../data/train/debug_neg.txt", "../data/train/debug_step1.txt")]:
-    for fin, fout in [(FULL_POS_ORIG_FILE_NAME, FULL_POS_FILE_NAME), (FULL_NEG_ORIG_FILE_NAME, FULL_NEG_FILE_NAME),
+    for fin, fout in [(FULL_POS_ORIG_FILE_NAME, FULL_POS_FILE_NAME),
+                      (FULL_NEG_ORIG_FILE_NAME, FULL_NEG_FILE_NAME),
                       (TEST_ORIG_FILE_NAME, TEST_FILE_NAME)]:
         with open(fin, 'r') as f, open(fout, 'w') as out:
             print("start processing file:\t\t"+fin)
@@ -30,7 +30,8 @@ def main():
                 if line_cnt % 10000 == 0:
                     print(line_cnt)
 
-                result = []   # here we accumulate the result line after the processing
+                # here we accumulate the result line after the processing
+                result = []
                 for word_index, word in enumerate(line.split()):
                     if word[0] == '#':
                         temp = re.sub(num, "<num>", word)
@@ -59,7 +60,7 @@ def main():
                         result.append("<alphanum>")
                         #print("{}\t\t-->\t\t{}".format(word, "<alphanum>"))
                     else:
-                        if fin == TEST_ORIG_FILE_NAME and word_index == 1:
+                        if fin == TEST_ORIG_FILE_NAME and word_index == 0:
                             # The test data file is indexed, unlike the positive
                             # and negative training ones. We don't want to
                             # replace the index with <num>!
