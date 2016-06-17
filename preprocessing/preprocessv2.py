@@ -257,7 +257,7 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    #main(sys.argv[1:])
-    test_preprocessing()
+    main(sys.argv[1:])
+    #test_preprocessing()
 
 # ./preprocessv2.py --full --sentence-length=35
