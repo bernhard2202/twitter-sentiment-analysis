@@ -42,6 +42,7 @@ SMALL_TRAIN_SIZE = 200000
 
 
 def word_filter(word):
+    # TODO(andrei): Is this still necessary after Nikos's stage 1 preprocessing?
     word = ''.join(i for i in word if not i.isdigit())
     if len(word) < 2:
         return None
@@ -72,9 +73,14 @@ def filter_with_voc(word, voc):
         return None
 
 
-def pickle_vocab(file_prefix):
+def pickle_vocab(file_prefix, has_counts=True):
     """
     pickle vocabulary
+
+    Arguments:
+        'has_counts': Whether the cut vocabulary file given also contains each
+                      token's counts. This is the case when using Nikos's
+                      preprocessing scheme.
     """
     vocab = dict()
     vocab_inv = dict()
@@ -86,9 +92,22 @@ def pickle_vocab(file_prefix):
     i = 1
     words = set()
 
+    if has_counts:
+        print("Assuming vocabulary file also contains frequencies.")
+    else:
+        print("Assuming vocabulary file contains no frequency info and just has"
+              " exactly one token per line.")
+
     with open(VOCAB_FILE_NAME) as f:
         for idx, line in enumerate(f):
-            word = word_filter(line.strip())
+            if has_counts:
+                # Line has format '<count> <token>'.
+                freq, word = line.split()
+                word = word_filter(word.strip())
+            else:
+                # Line has format '<token>'.
+                word = word_filter(line.strip())
+
             # word not filtered in preprocessing and word
             # unique after filtering
             i += 1
@@ -112,8 +131,10 @@ def pickle_vocab(file_prefix):
 
 
 def pickle_word_embeddings(vocab, file_prefix):
-    """
-    pickle word embeddings
+    """Pickles word embeddings into a easy-to-load numpy format.
+
+    Only pickles embeddings which we actually use, which is especially useful
+    when dealing with huge pre-trained embedding datasets.
     """
     # TODO(andrei): Support hybrid approach.
     if FLAGS.pretrained_w2v:
@@ -126,18 +147,27 @@ def pickle_word_embeddings(vocab, file_prefix):
             fname))
         model = Word2Vec.load(fname)
 
-    # todo more elegant way
-    embedding_dim = len(model['queen'])
+    embedding_dim = model.vector_size
     changed = 0
+
+    # TODO(andrei): Consider initializing unknown embeddings with smaller
+    # values.
     X = np.random.uniform(-0.25, 0.25, size=(len(vocab), embedding_dim))
     print("Creating word2vec lookup table...")
+    print("Model stats:")
+    print("Corpus size:           {0}".format(model.corpus_count))
+    print("Vector dimensionality: {0}".format(embedding_dim))
+    print("Vocabulary size:       {0}".format(len(model.vocab.keys())))
+
     for word in vocab:
         if word in model:
             changed += 1
             X[vocab[word]] = model[word]
+
     np.save('../data/preprocessing/{}-embeddings'.format(file_prefix), X)
     print("Embeddings pickled.")
-    print("Used {} pre-trained word2vec vectors and {} new random vectors.".format(changed, (len(vocab) - changed)))
+    print("Used {} pre-trained word2vec vectors and {} new random vectors."
+          .format(changed, (len(vocab) - changed)))
 
 
 def handle_hashtags(line, vocab):
