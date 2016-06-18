@@ -14,11 +14,11 @@ FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
 
 print("Loading data...")
-with open('./data/preprocessing/vocab.pkl', 'rb') as f:
-    vocabulary = pickle.load(f)
-with open('./data/preprocessing/vocab.pkl', 'rb') as f:
-    vocabulary_inv = pickle.load(f)
-print("Vocabulary size: {:d}".format(len(vocabulary)))
+# with open('./data/preprocessing/vocab.pkl', 'rb') as f:
+#     vocabulary = pickle.load(f)
+# with open('./data/preprocessing/vocab.pkl', 'rb') as f:
+#     vocabulary_inv = pickle.load(f)
+# print("Vocabulary size: {:d}".format(len(vocabulary)))
 
 traindata = np.load('./data/preprocessing/validateX.npy')
 
@@ -29,7 +29,8 @@ traindata = np.load('./data/preprocessing/validateX.npy')
 # checkpoint_file = './data/runs/1465891958-prebuilt-w2v/checkpoints/model-100000'
 # Not last checkpoint, but worse than final one.
 # checkpoint_file = './data/runs/euler/local-w2v-350d-1466025108/checkpoints/model-82500'
-checkpoint_file = './data/runs/euler//local-w2v-275d-1466050948/checkpoints/model-96690'
+# checkpoint_file = './data/runs/euler//local-w2v-275d-1466050948/checkpoints/model-96690'
+checkpoint_file = None
 
 timestamp = int(time.time())
 filename = "./data/output/prediction_cnn_{0}.csv".format(timestamp)
@@ -82,3 +83,5 @@ with graph.as_default():
 
         print("...done.")
         print("Wrote predictions to: {0}".format(filename))
+        print("Wrote some simple metadata about how the predictions were"
+              " generated to: {0}".format(meta_filename))
