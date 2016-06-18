@@ -67,13 +67,13 @@ def vocab_and_embeddings():
     print("len(extra_words)+len(pretrained)+1= {}".format(len(extra_words)+len(pretrained)+1))
     #assert len(vocab) == (len(extra_words) + len(pretrained) + 1) == len(vocab_inv)
 
-    with open('../data/preprocessing/vocab.pkl', 'wb') as f:
+    with open('../data/preprocessing/full-vocab.pkl', 'wb') as f:
         pickle.dump(vocab, f, protocol=2)
-    with open('../data/preprocessing/vocab-inv.pkl', 'wb') as f:
+    with open('../data/preprocessing/full-vocab-inv.pkl', 'wb') as f:
         pickle.dump(vocab_inv, f, protocol=2)
     print("Vocabulary pickled.")
 
-    np.save('../data/preprocessing/embeddings', X)
+    np.save('../data/preprocessing/full-embeddings', X)
     print("Embeddings pickled.")
     print("Used {} pre-trained word2vec vectors and {} new random vectors.".format(len(pretrained), len(extra_words)+1))
 
@@ -133,8 +133,6 @@ def test_preprocessing():
                 #print("before preprocessing: {}".format(line))
                 line = handle_hashtags_and_mappings(line, vocab)
                 print(line)
-
-
 
 
 def prepare_data(train_pos_file, train_neg_file, train_size, vocab, max_sentence_length):
@@ -248,8 +246,8 @@ def main(argv):
 
     print('prepare training data..')
     X, Y = prepare_data(train_pos_file, train_neg_file, train_size, vocab, max_sentence_length)
-    np.save('../data/preprocessing/trainX', X)
-    np.save('../data/preprocessing/trainY', Y)
+    np.save('../data/preprocessing/full-trainX', X)
+    np.save('../data/preprocessing/full-trainY', Y)
 
     print('prepare validation data..')
     validate_x = prepare_valid_data(max_sentence_length, vocab)

@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
+
+import os
 import pickle
-import gensim
-import numpy as np
-import sys
 import re
+import sys
+
+import gensim
 
 """read the sorted cut_vocab.txt     which has format:
 freq word
 and try to map it to word2vec pretrained words."""
 
 VOCAB_FILE_NAME = "../data/preprocessing/vocab_cut.txt"
+
+# TODO(andrei): Experiment with locally-trained embeddings.
 WORD2VEC_FILE_NAME = "../data/word2vec/GoogleNews-vectors-negative300.bin"
 WORD_FREQ_DICT = "../data/preprocessing/20k.txt"
 MAPPINGS_FILE_NAME = "../data/preprocessing/mappings/mappings.pkl"
@@ -18,15 +22,14 @@ HIGH_FREQUENCY = 10
 LOW_FREQUENCY = 4    # TODO experiment with different values. i believe we should increase it
 HASH_TAG_FREQ_BOUND = 80
 
-
+if not os.path.exists(MAPPINGS_FOLDER):
+    os.makedirs(MAPPINGS_FOLDER)
 
 model = gensim.models.word2vec.Word2Vec.load_word2vec_format(WORD2VEC_FILE_NAME, binary=True)
 freq_dict = model.vocab
 mappings = dict()
 pretrained = set()
 extra_words = dict()
-
-
 
 
 # returns True if it found a correction of the word, otherwise returns False.
@@ -90,7 +93,7 @@ def spell_correction2(word):
         correct_word = word   #found a solution
     elif len(word) > 4:   # if the word is too small do not try to find a correction.
         split_words, split_score  = split_to_2_words(word)    # "decision making", 45000
-#TODO correct mistake
+        #TODO correct mistake
         ed1 = edits1(word)
         without_dupl = delete_duplicate_letters(word)
         if without_dupl != word:
@@ -165,6 +168,7 @@ def main():
             if line_cnt % 10000 == 0:
                 print(line_cnt)
                 #pickle_mappings()
+
             freq, word = line.split()
             word = word.strip()
             freq = int(freq)
@@ -188,16 +192,18 @@ def main():
                 else:  #correct_word==None  (nothing similar found)
                     if freq > LOW_FREQUENCY:
                         extra_words[word] = freq
-                    else: #very low frequency. if not manage to find a match with word2vec or previous new words just discard it
+                    else:
+                        # very low frequency. if not manage to find a match
+                        # with word2vec or previous new words just discard it
+                        # TODO(andrei): Keep track of these words in case there
+                        # are still patterns we could exploit.
                         pass
-
-
 
     pickle_mappings()
 
 
 def pickle_mappings():
-    print("starting saving mappings!!!")
+    print("Saving mappings to file [{0}]...".format(MAPPINGS_FILE_NAME))
     with open(MAPPINGS_FILE_NAME, "wb") as f:
         pickle.dump((mappings, pretrained, extra_words), f)
 
@@ -214,13 +220,15 @@ def pickle_mappings():
         for x in pretrained:
             f.write(x + "\n")
 
-    print("end saving mappings!!!")
+    print("Finished saving mappings.")
 
 
 
 
-# Modified version of Spelling Corrector from Peter Norvig. http://norvig.com/spell-correct.html
+# Modified version of Spelling Corrector from Peter Norvig.
+# http://norvig.com/spell-correct.html
 alphabet = 'abcdefghijklmnopqrstuvwxyz'
+
 
 def edits1(word):
     s = [(word[:i], word[i:]) for i in range(len(word) + 1)]
@@ -230,18 +238,23 @@ def edits1(word):
     inserts    = [a + c + b     for a, b in s for c in alphabet]
     return set(deletes + transposes + replaces + inserts)
 
+
 def known_edits2(word):
     return set(e2 for e1 in edits1(word) for e2 in edits1(e1) if e2 in model)
 
+
 def known(words): return set(w for w in words if w in model)
+
 
 def correct1(word):
     candidates = known(edits1(word))
     return None if len(candidates) == 0 else  max(candidates, key=vocab_sorting)
 
+
 def correct2(word):
     candidates = known_edits2(word)
     return None if len(candidates) == 0 else  max(candidates, key=vocab_sorting)
+
 
 def vocab_sorting(x):
     return freq_dict.get(x).count
@@ -249,19 +262,10 @@ def vocab_sorting(x):
 
 def known_from_extra(words): return set(w for w in words if w in extra_words)
 
+
 def correct1_extra(word):   # look for ED=1 from the extra_words
     candidates = known_from_extra(edits1(word))
     return    None if len(candidates) == 0 else  max(candidates, key=extra_words.get)
-
-
-
-
-
-
-
-
-
-
 
 if __name__ == "__main__":
     main()
