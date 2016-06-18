@@ -37,6 +37,13 @@ tf.flags.DEFINE_boolean("vocab_has_counts", False,
                         "Whether the cut vocabulary file given also contains"
                         " each token's counts. This is the case when using"
                         " Nikos's preprocessing scheme.")
+tf.flags.DEFINE_integer("min_occurrence_count", 5,
+                        "The minimum number of times a word has to appear in"
+                        " our corpus in order to consider a real word vector"
+                        " for it, as opposed to just giving it a random one."
+                        " This flag is useful when using Nikos's preprocessing"
+                        " scheme, since this scheme no longer pre-trims"
+                        " the words by their count in 'vocab_cut.txt'.")
 
 FLAGS = tf.flags.FLAGS
 
@@ -109,6 +116,12 @@ def pickle_vocab(file_prefix, has_counts):
                 # Line has format '<count> <token>'.
                 freq, word = line.split()
                 word = word_filter(word.strip())
+
+                # In this scenario, 'vocab_cut' still includes very rare words,
+                # so we need to ensure we don't save their embeddings, since
+                # they're probably useless and just take up disk space.
+                if int(freq) < FLAGS.min_occurrence_count:
+                    continue
             else:
                 # Line has format '<token>'.
                 word = word_filter(line.strip())
@@ -163,9 +176,10 @@ def pickle_word_embeddings(vocab, file_prefix):
     X = np.random.uniform(-0.25, 0.25, size=(len(vocab), embedding_dim))
     print("Creating word2vec lookup table...")
     print("Model stats:")
-    print("Corpus size:           {0}".format(model.corpus_count))
-    print("Vector dimensionality: {0}".format(embedding_dim))
-    print("Vocabulary size:       {0}".format(len(model.vocab.keys())))
+    print("Corpus size:                     {0}".format(model.corpus_count))
+    print("Vector dimensionality:           {0}".format(embedding_dim))
+    print("Bash-generated vocabulary size:  {0}".format(len(vocab)))
+    print("W2V model vocabulary size:       {0}".format(len(model.vocab.keys())))
 
     print("Sample from w2v model: ", list(model.vocab.keys())[:25])
     print("Sample from vocabulary:", list(list(vocab.keys())[:25]))
