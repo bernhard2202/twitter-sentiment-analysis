@@ -23,7 +23,7 @@ tf.flags.DEFINE_string("pretrained_w2v_file",
                        "The name of the pre-trained word2vec embedding file."
                        " (default: ../data/word2vec/GoogleNews-vectors-negative300.bin")
 tf.flags.DEFINE_string("local_w2v_file",
-                       "../data/word2vec/word2vec-local-gensim.bin",
+                       None,
                        "Name of the word2vec embedding file trained locally on"
                        " the Twitter dataset.")
 tf.flags.DEFINE_boolean("full", False, "Whether to use the full Twitter dataset."
@@ -124,11 +124,22 @@ def pickle_word_embeddings(vocab):
             fname))
         model = Word2Vec.load(fname)
 
-    # todo more elegant way
-    embedding_dim = len(model['queen'])
+    embedding_dim = model.vector_size
     changed = 0
+
+    # TODO(andrei): Consider initializing unknown embeddings with smaller
+    # values.
     X = np.random.uniform(-0.25, 0.25, size=(len(vocab), embedding_dim))
     print("Creating word2vec lookup table...")
+    print("Model stats:")
+    print("Corpus size:                     {0}".format(model.corpus_count))
+    print("Vector dimensionality:           {0}".format(embedding_dim))
+    print("Bash-generated vocabulary size:  {0}".format(len(vocab)))
+    print("W2V model vocabulary size:       {0}".format(len(model.vocab.keys())))
+
+    print("Sample from w2v model: ", list(model.vocab.keys())[:25])
+    print("Sample from vocabulary:", list(list(vocab.keys())[:25]))
+
     for word in vocab:
         if word in model:
             changed += 1
@@ -139,7 +150,7 @@ def pickle_word_embeddings(vocab):
 
 
 
-def handle_hashtags(line,vocab):
+def handle_hashtags(line, vocab):
     result_line = []
     for word in line.split():
         if word[0] == '#':
@@ -151,7 +162,8 @@ def handle_hashtags(line,vocab):
                 for s in range(0, length-n+1):  #starting point. so we examine substring  [s,s+n)
                     substring = word[s:s+n]
                     if substring in vocab:
-                        if ~np.any(claimed[s:s+n]):   #nothing is claimed so take it
+                        if ~np.any(claimed[s:s+n]):
+                            # nothing is claimed so take it
                             claimed[s:s+n] = True
                             word_result.append((s, substring))
             word_result.sort()
