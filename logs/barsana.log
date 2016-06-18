@@ -12,6 +12,14 @@
     * Doesn't help almost at all.
     * Perhaps could be tried once we get a really better model.
 
+Fixed w2v bug (18 Jun)
+
+ * Embedding size == 300
+   * 1st stage of Nikos's preprocessing (0.85840)
+   * 2nd stage of Nikos's preprocessing (PENDING)
+        - used pre-computed embeddings by design
+        - increased max sentence length to 35 instead of 30
+
 ## Experiments to do
  * Evaluate results of first part of nikos's preprocessing
  * Evaluate results of second part of nikos's preprocessing (with pretrained w2v)
