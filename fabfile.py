@@ -112,7 +112,7 @@ def _run_euler():
                       ' -B'
                       ' LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/ext/lib" "$HOME"/ext/lib/ld-2.23.so "$HOME"/.venv/bin/python3'
                       # TODO(andrei): Pass these parameters as arguments to fabric.
-                      ' ../train_model.py --num_epochs 10'
+                      ' ../train_model.py --num_epochs 14'
                       #' --filter_sizes "3,4,5,7"'
                       ' --data_root ../data'
                       ' --learning_rate 0.000075'
