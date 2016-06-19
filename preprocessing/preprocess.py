@@ -262,7 +262,8 @@ def handle_hashtags_and_mappings(line, vocab):
                 for s in range(0, length-n+1):  #starting point. so we examine substring  [s,s+n)
                     substring = word[s:s+n]
                     if substring in vocab:
-                        if ~np.any(claimed[s:s+n]):   #nothing is claimed so take it
+                        if ~np.any(claimed[s:s+n]):
+                            # nothing is claimed so take it
                             claimed[s:s+n] = True
                             word_result.append((s, substring))
             word_result.sort()

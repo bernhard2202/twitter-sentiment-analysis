@@ -17,7 +17,7 @@ tf.flags.DEFINE_string("checkpoint_file", None, "Checkpoint file from the"
 FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
 
-print("Loading data...")
+# print("Loading data...")
 # with open('./data/preprocessing/vocab.pkl', 'rb') as f:
 #     vocabulary = pickle.load(f)
 # with open('./data/preprocessing/vocab.pkl', 'rb') as f:
