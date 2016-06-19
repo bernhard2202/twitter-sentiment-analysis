@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 
 import pickle
+import socket
 import time
 
 
@@ -13,11 +14,11 @@ FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
 
 print("Loading data...")
-with open('./data/preprocessing/vocab.pkl', 'rb') as f:
-    vocabulary = pickle.load(f)
-with open('./data/preprocessing/vocab.pkl', 'rb') as f:
-    vocabulary_inv = pickle.load(f)
-print("Vocabulary size: {:d}".format(len(vocabulary)))
+# with open('./data/preprocessing/vocab.pkl', 'rb') as f:
+#     vocabulary = pickle.load(f)
+# with open('./data/preprocessing/vocab.pkl', 'rb') as f:
+#     vocabulary_inv = pickle.load(f)
+# print("Vocabulary size: {:d}".format(len(vocabulary)))
 
 traindata = np.load('./data/preprocessing/validateX.npy')
 
@@ -30,6 +31,7 @@ checkpoint_file = './data/runs/euler/1465939515/checkpoints/model-79110'
 
 timestamp = int(time.time())
 filename = "./data/output/prediction_cnn_{0}.csv".format(timestamp)
+meta_filename = "{0}.meta".format(filename)
 print("Predicting using checkpoint file [{0}].".format(checkpoint_file))
 print("Will write predictions to file [{0}].".format(filename))
 
@@ -72,4 +74,11 @@ with graph.as_default():
             else:
                 print("%d,1" % id,file=submission)
 
+        with open(meta_filename, 'w') as mf:
+            print("Generated from checkpoint: {0}".format(checkpoint_file), file=mf)
+            print("Hostname: {0}".format(socket.gethostname()), file=mf)
+
         print("...done.")
+        print("Wrote predictions to: {0}".format(filename))
+        print("Wrote some simple metadata about how the predictions were"
+              " generated to: {0}".format(meta_filename))

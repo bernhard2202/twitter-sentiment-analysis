@@ -56,6 +56,33 @@ def euler(sub='run'):
         raise ValueError("Unknown Euler action: {0}".format(sub))
 
 
+@hosts('aws-cil-gpu')
+def aws(sub='run'):
+    if sub == 'run':
+        # TODO(andrei): Ideally you'd want to unify this with '_run_euler'.
+        _run_aws()
+    else:
+        raise ValueError("Unknown AWS action: {0}".format(sub))
+
+
+def _run_aws():
+    print("Will train TF model remotely on an AWS GPU instance.")
+    print("Yes, this will cost you real $$$.")
+
+    sync_data_and_code()
+
+    with cd('deploy'):
+        ts = '$(date +%Y%m%dT%H%M%S)'
+        tf_command = ('t=' + ts + ' && mkdir $t && cd $t &&'
+                      'python ../train_model.py --num_epochs 15'
+                      ' --filter_sizes "3,4,5,7" '
+                      ' --data_root ../data'
+                      ' --learning_rate 0.0001'
+                      ' --batch_size 256 --evaluate_every 1000'
+                      ' --checkpoint_every 7500 --output_every 500')
+        _in_screen(tf_command, shell_escape=False, shell=False)
+
+
 def _run_euler():
     print("Will train TF model remotely on Euler.")
     sync_data_and_code()
@@ -85,10 +112,11 @@ def _run_euler():
                       ' -B'
                       ' LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/ext/lib" "$HOME"/ext/lib/ld-2.23.so "$HOME"/.venv/bin/python3'
                       # TODO(andrei): Pass these parameters as arguments to fabric.
-                      ' ../train_model.py --num_epochs 11'
+                      ' ../train_model.py --num_epochs 10'
+                      #' --filter_sizes "3,4,5,7"'
                       ' --data_root ../data'
                       ' --learning_rate 0.000075'
-                      ' --batch_size 256 --evaluate_every 1000'
+                      ' --batch_size 256 --evaluate_every 2500'
                       ' --checkpoint_every 7500 --output_every 1000')
         run(tf_command, shell_escape=False, shell=False)
 
@@ -114,13 +142,13 @@ def gce():
 def sync_data_and_code():
     run('mkdir -p ~/deploy/data/preprocessing')
 
+    # Ensure we have a trailing slash for rsync to work as intended.
     folder = os.path.join('data', 'preprocessing') + '/'
-    # This does no tilde expansion, and this is what we want.
+    # 'os.path.join' does no tilde expansion, and this is what we want.
     remote_folder = os.path.join('~/deploy', folder)
 
     # This syncs the data (needs to be preprocessed in advance).
-    rsync(local_dir=folder, remote_dir=remote_folder,
-          exclude=['*.txt'])
+    rsync(local_dir=folder, remote_dir=remote_folder, exclude=['*.txt'])
 
     put(local_path='./train_model.py',
         remote_path=os.path.join('~/deploy', 'train_model.py'))
@@ -158,9 +186,15 @@ def tensorboard():
 
     with cd('deploy'):
         tb_cmd = 'tensorboard --logdir data/runs'
-        screen = "screen -dmS tensorboard_screen bash -c '{}'".format(tb_cmd)
-        print(screen)
-        run(screen, pty=False)
+        _in_screen(tb_cmd)
+
+
+def _in_screen(cmd, **kw):
+    # The final 'exec bash' prevents the screen from terminating when the
+    # command exits.
+    screen = "screen -dmS tensorboard_screen bash -c '{} ; exec bash'".format(cmd)
+    print(screen)
+    run(screen, pty=False, **kw)
 
 
 def latest_tb():
