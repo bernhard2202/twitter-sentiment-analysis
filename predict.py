@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 
 import pickle
+# Used for reliably getting the current hostname.
 import socket
 import time
 
@@ -9,7 +10,10 @@ import time
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
 tf.flags.DEFINE_integer("batch_size", 1, "Batch Size (default: 1)")
-tf.flags.DEFINE_string("checkpoint_dir", "", "Checkpoint directory from training run")
+
+# Example: './data/runs/euler/local-w2v-275d-1466050948/checkpoints/model-96690'
+tf.flags.DEFINE_string("checkpoint_file", None, "Checkpoint file from the"
+                                                " training run.")
 FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
 
@@ -21,17 +25,11 @@ print("Loading data...")
 # print("Vocabulary size: {:d}".format(len(vocabulary)))
 
 traindata = np.load('./data/preprocessing/validateX.npy')
+if FLAGS.checkpoint_file is None:
+    raise ValueError("Please specify a TensorFlow checkpoint file to use for"
+                     " making the predictions (--checkpoint_file <file>).")
 
-# checkpoint_file = "./data/runs/1462215568/checkpoints/model-246092"
-# This one (131k steps over full dataset) is likely to be quite overfit.
-# checkpoint_file = './data/runs/1465891958-prebuilt-w2v/checkpoints/model-131850'
-# 100k seems prety bad. 110-120k seems best at the moment.
-# checkpoint_file = './data/runs/1465891958-prebuilt-w2v/checkpoints/model-100000'
-# Not last checkpoint, but worse than final one.
-# checkpoint_file = './data/runs/euler/local-w2v-350d-1466025108/checkpoints/model-82500'
-# checkpoint_file = './data/runs/euler//local-w2v-275d-1466050948/checkpoints/model-96690'
-checkpoint_file = None
-
+checkpoint_file = FLAGS.checkpoint_file
 timestamp = int(time.time())
 filename = "./data/output/prediction_cnn_{0}.csv".format(timestamp)
 meta_filename = "{0}.meta".format(filename)
@@ -40,6 +38,7 @@ print("Will write predictions to file [{0}].".format(filename))
 
 graph = tf.Graph()
 with graph.as_default():
+    # TODO(andrei): Is this config (and its associated flags) really necessary?
     session_conf = tf.ConfigProto(
       allow_soft_placement=FLAGS.allow_soft_placement,
       log_device_placement=FLAGS.log_device_placement)

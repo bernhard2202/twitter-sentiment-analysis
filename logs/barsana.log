@@ -16,13 +16,12 @@ Fixed w2v bug (18 Jun)
 
  * Embedding size == 300
    * 1st stage of Nikos's preprocessing (0.85840)
-   * 2nd stage of Nikos's preprocessing (PENDING)
+        - used local-trained word2vec
+   * 2nd stage of Nikos's preprocessing (0.86160)
         - used pre-computed embeddings by design
         - increased max sentence length to 35 instead of 30
 
 ## Experiments to do
- * Evaluate results of first part of nikos's preprocessing
- * Evaluate results of second part of nikos's preprocessing (with pretrained w2v)
  * Same as above, but with pretrained GloVe
  * Same as above, but with local GloVe
  * [LOW] Embedding size 400 (will be slower to train).
