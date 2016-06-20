@@ -26,6 +26,9 @@ tf.flags.DEFINE_string("local_w2v_file",
                        None,
                        "Name of the word2vec embedding file trained locally on"
                        " the Twitter dataset.")
+tf.flags.DEFINE_boolean("advanced", False, "Whether to use advanced"
+                                           " preprocessing (e.g. spelling"
+                                           " correction). (default: False)")
 tf.flags.DEFINE_boolean("full", False, "Whether to use the full Twitter dataset."
                                        " (default: False)")
 tf.flags.DEFINE_integer("sentence_length", 30, "The maximum sentence length to"
@@ -37,13 +40,14 @@ tf.flags.DEFINE_boolean("vocab_has_counts", False,
                         "Whether the cut vocabulary file given also contains"
                         " each token's counts. This is the case when using"
                         " Nikos's preprocessing scheme.")
-tf.flags.DEFINE_integer("min_occurrence_count", 5,
-                        "The minimum number of times a word has to appear in"
-                        " our corpus in order to consider a real word vector"
-                        " for it, as opposed to just giving it a random one."
-                        " This flag is useful when using Nikos's preprocessing"
-                        " scheme, since this scheme no longer pre-trims"
-                        " the words by their count in 'vocab_cut.txt'.")
+
+# tf.flags.DEFINE_integer("min_occurrence_count", 5,
+#                         "The minimum number of times a word has to appear in"
+#                         " our corpus in order to consider a real word vector"
+#                         " for it, as opposed to just giving it a random one."
+#                         " This flag is useful when using Nikos's preprocessing"
+#                         " scheme, since this scheme no longer pre-trims"
+#                         " the words by their count in 'vocab_cut.txt'.")
 
 FLAGS = tf.flags.FLAGS
 
@@ -53,7 +57,7 @@ FULL_TRAIN_SIZE = 2500000
 SMALL_TRAIN_SIZE = 200000
 
 # TODO(andrei): Option to ignore mappings.
-# TODO(andrei): Cleanup mapping loading.
+# TODO(andrei): Clean-up mapping loading code.
 MAPPINGS_FOLDER = "../data/preprocessing/mappings/"
 print("Loading pre-computed mappings...")
 with open(MAPPINGS_FOLDER + "mappings.pkl", 'rb') as f:
@@ -61,36 +65,36 @@ with open(MAPPINGS_FOLDER + "mappings.pkl", 'rb') as f:
 print("Finished loading pre-computed mappings.")
 
 
-# def word_filter(word):
-#     # TODO(andrei): Is this still necessary after Nikos's stage 1 preprocessing?
-#     word = ''.join(i for i in word if not i.isdigit())
-#     if len(word) < 2:
-#         return None
-#
-#     # remove hashtags in beginning
-#     # if word[0] == '#':
-#     #     return None
-#     #    word = word[1:]
-#
-#     # stopwords
-#     # if word in stopwords:
-#     #    return None
-#
-#     # remove numbers
-#     # if numberPattern.match(word) is not None:
-#     #    return None
-#
-#     # remove single chars
-#
-#     return word
+def word_filter(word):
+    # TODO(andrei): Is this still necessary after Nikos's stage 1 preprocessing?
+    word = ''.join(i for i in word if not i.isdigit())
+    if len(word) < 2:
+        return None
+
+    # remove hashtags in beginning
+    # if word[0] == '#':
+    #     return None
+    #    word = word[1:]
+
+    # stopwords
+    # if word in stopwords:
+    #    return None
+
+    # remove numbers
+    # if numberPattern.match(word) is not None:
+    #    return None
+
+    # remove single chars
+
+    return word
 
 
-# def filter_with_voc(word, voc):
-#     word = word_filter(word)
-#     if (word is not None) and (word in voc):
-#         return word
-#     else:
-#         return None
+def filter_with_voc(word, voc):
+    word = word_filter(word)
+    if (word is not None) and (word in voc):
+        return word
+    else:
+        return None
 
 
 def pickle_vocab_and_embeddings(file_prefix, has_counts):
@@ -154,6 +158,7 @@ def pickle_vocab_and_embeddings(file_prefix, has_counts):
         X[index] = model[word]
         index += 1
 
+    # This was the old functionality.
     # with open(VOCAB_FILE_NAME) as f:
     #     for idx, line in enumerate(f):
     #         if has_counts:
@@ -211,6 +216,7 @@ def pickle_word_embeddings(vocab, file_prefix):
     Only pickles embeddings which we actually use, which is especially useful
     when dealing with huge pre-trained embedding datasets.
     """
+    raise RuntimeError("Deprecated.")
     # TODO(andrei): Support hybrid approach.
     if FLAGS.pretrained_w2v:
         fname = FLAGS.pretrained_w2v_file
@@ -278,7 +284,6 @@ def handle_hashtags_and_mappings(line, vocab):
 
 
 def handle_hashtags(line, vocab):
-    raise RuntimeError("This function is deprecated.")
     result_line = []
     for word in line.split():
         if word[0] == '#':
@@ -293,6 +298,7 @@ def handle_hashtags(line, vocab):
             word = word[1:]
             length = len(word)
             word_result = []
+
             # initially all letters are free to select
             claimed = np.full(length, False, dtype=bool)
             # initially search for words with n letters, then n-1,... until 1
@@ -314,10 +320,9 @@ def handle_hashtags(line, vocab):
     return ' '.join(result_line)
 
 
-def prepare_data(train_pos_file, train_neg_file, train_size, vocab, max_sentence_length):
-    """
-    prepare training data
-    """
+def prepare_data(train_pos_file, train_neg_file, train_size, vocab,
+                 max_sentence_length):
+    """Prepares the training data."""
     train_X = np.zeros((train_size, max_sentence_length))
     train_Y = np.zeros((train_size, 2))
     # sanity check because we initialize with zero then we don't have to do padding
@@ -333,30 +338,35 @@ def prepare_data(train_pos_file, train_neg_file, train_size, vocab, max_sentence
                 line = line.strip()
                 j = 0
                 #print("before handle_hashtags: {}".format(line))
-                line = handle_hashtags_and_mappings(line, vocab)
+                if FLAGS.advanced:
+                    line = handle_hashtags_and_mappings(line, vocab)
+                else:
+                    line = handle_hashtags(line, vocab)
                 #print("after handle_hashtags: {}".format(line))
-                for word in line.split():
-                    # TODO-PP(andrei): Disabled to stay in sync w/ Nikos's code.
-                    # # word = filter_with_voc(word, vocab)
-                    # if word is not None:
-                    #     train_X[i, j] = vocab[word]
-                    #     j += 1
-                    # if j == max_sentence_length:
-                    #     cut += 1
-                    #     # print("cut: "+line)
-                    #     # cut sentences longer than max sentence length
-                    #     break
-                    if word in vocab:
-                        train_X[i, j] = vocab[word]
-                        j += 1
-                    if j == max_sentence_length:
-                        cut += 1
-                        # cut sentences longer than max sentence length
-                        break
+
+                if FLAGS.advanced:
+                    for word in line.split():
+                        if word in vocab:
+                            train_X[i, j] = vocab[word]
+                            j += 1
+                        if j == max_sentence_length:
+                            cut += 1
+                            # cut sentences longer than max sentence length
+                            break
+                else:
+                    for word in line.split():
+                        word = filter_with_voc(word, vocab)
+                        if word is not None:
+                            train_X[i, j] = vocab[word]
+                            j += 1
+                        if j == max_sentence_length:
+                            cut += 1
+                            # cut sentences longer than max sentence length
+                            break
 
                 if j == 0:
                     empty += 1
-                    # print("empty: "+line)
+
                 if filename in (FULL_POS_FILE_NAME, POS_FILE_NAME):
                     train_Y[i, 0] = 0
                     train_Y[i, 1] = 1
@@ -375,38 +385,39 @@ def prepare_data(train_pos_file, train_neg_file, train_size, vocab, max_sentence
     return train_X, train_Y
 
 
-# def prepare_valid_data(max_sentence_length, vocab):
-#     validate_x = np.zeros((VALID_SIZE, max_sentence_length))
-#     i = 0
-#     cut = 0
-#     empty = 0
-#     with open(VALID_FILE_NAME) as f:
-#         for line in f:
-#             line = line.strip().split(',')
-#             tweet = ' '.join(line[1:])
-#             tweet = tweet.strip().replace(',', ' ')
-#             tweet = handle_hashtags(tweet, vocab)
-#             j = 0
-#             for word in tweet.split():
-#                 filtered_word = filter_with_voc(word, vocab)
-#                 if filtered_word is not None:
-#                     validate_x[i, j] = vocab[filtered_word]
-#                     j += 1
-#                 if j == max_sentence_length:
-#                     cut += 1
-#                     # print("cut: "+line)
-#                     # cut sentences longer than max sentence length
-#                     break
-#             if j == 0:
-#                 #print(tweet)
-#                 empty += 1
-#             i += 1
-#     print("Preprocessing done. {} tweets cut to max sentence length and {} tweets disapeared due to filtering."
-#           .format(cut, empty))
-#     return validate_x
+def prepare_valid_data_old(max_sentence_length, vocab):
+    validate_x = np.zeros((VALID_SIZE, max_sentence_length))
+    i = 0
+    cut = 0
+    empty = 0
+    with open(VALID_FILE_NAME) as f:
+        for line in f:
+            line = line.strip().split(',')
+            tweet = ' '.join(line[1:])
+            tweet = tweet.strip().replace(',', ' ')
+            tweet = handle_hashtags(tweet, vocab)
+            j = 0
+            for word in tweet.split():
+                filtered_word = filter_with_voc(word, vocab)
+                if filtered_word is not None:
+                    validate_x[i, j] = vocab[filtered_word]
+                    j += 1
+                if j == max_sentence_length:
+                    cut += 1
+                    # print("cut: "+line)
+                    # cut sentences longer than max sentence length
+                    break
+            if j == 0:
+                #print(tweet)
+                empty += 1
+            i += 1
+    print("Preprocessing done. {} tweets cut to max sentence length and {} tweets disapeared due to filtering."
+          .format(cut, empty))
+    return validate_x
 
 
 def prepare_valid_data(max_sentence_length, vocab):
+    assert FLAGS.advanced, "Should only be used in advanced mode."
     validate_x = np.zeros((VALID_SIZE, max_sentence_length))
     i = 0
     cut = 0
@@ -416,6 +427,7 @@ def prepare_valid_data(max_sentence_length, vocab):
             tweet = tweet.strip()
             tweet = tweet[6:]   # remove prefix   "<num>,"
             tweet = handle_hashtags_and_mappings(tweet, vocab)
+
             j = 0
             for word in tweet.split():
                 if word in vocab:
@@ -434,11 +446,6 @@ def prepare_valid_data(max_sentence_length, vocab):
           .format(cut, empty))
     return validate_x
 
-# def usage():
-#     print("usage: preprocess.py  [--full] [--sentence-length=]")
-#     print("\t--full use full data set")
-#     print("\t--sentence-length= maximum sentence length")
-
 
 def main():
     max_sentence_length = FLAGS.sentence_length
@@ -456,15 +463,26 @@ def main():
         prefix = "subset"
         print("Using full vocabulary, but only subset of tweets.")
 
-    print("WARNING: Ignoring 'split_hashtags' flag!")
+    if FLAGS.advanced:
+        print("Using ADVANCED preprocessing (e.g. automatic spelling "
+              " correction, smart hashtag splitting, etc.).")
+        if FLAGS.split_hashtags:
+            print("Ignoring 'split_hashtags' flag in this mode, and doing"
+                  " smart splitting anyway.")
+        if not FLAGS.pretrained_w2v:
+            print("WARNING: You are using locally-trained word2vec embeddings"
+                  " with ADVANCED preprocessing. This subsystem was designed"
+                  " with pretrained embeddings in mind!")
+    else:
+        print("Using SIMPLE preprocessing (e.g. NO spelling correction).")
+        if FLAGS.split_hashtags:
+            # TODO(andrei): Ensure message correctness.
+            print("Will attempt to split encountered hashtags.")
+        else:
+            print("Will NOT attempt to split encountered hashtags.")
+
     print("Pickling vocabulary and embeddings (this can take some time)...")
     vocab = pickle_vocab_and_embeddings(prefix, FLAGS.vocab_has_counts)
-
-    # This has been removed since 'pickle_vocab_and_embeddings' already handles
-    # this.
-    # TODO(andrei): Remove this once no longer needed.
-    # print('Pickle word embeddings (this can take some time)..')
-    # pickle_word_embeddings(vocab, prefix)
 
     print("Preparing training data...")
     X, Y = prepare_data(train_pos_file,train_neg_file, train_size, vocab,
@@ -473,9 +491,11 @@ def main():
     np.save("../data/preprocessing/{0}-trainY".format(prefix), Y)
 
     print('Preparing validation data...')
-    validate_x = prepare_valid_data(max_sentence_length, vocab)
-    # TODO(andrei): Add prefix!
-    np.save("../data/preprocessing/validateX".format(prefix), validate_x)
+    if FLAGS.advanced:
+        validate_x = prepare_valid_data(max_sentence_length, vocab)
+    else:
+        validate_x = prepare_valid_data_old(max_sentence_length, vocab)
+    np.save("../data/preprocessing/{0}-validateX".format(prefix), validate_x)
 
 
 if __name__ == "__main__":

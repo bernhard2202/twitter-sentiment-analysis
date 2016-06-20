@@ -24,7 +24,8 @@ FLAGS._parse_flags()
 #     vocabulary_inv = pickle.load(f)
 # print("Vocabulary size: {:d}".format(len(vocabulary)))
 
-traindata = np.load('./data/preprocessing/validateX.npy')
+prefix = 'full'
+validation_data = np.load('./data/preprocessing/{0}-validateX.npy'.format(prefix))
 if FLAGS.checkpoint_file is None:
     raise ValueError("Please specify a TensorFlow checkpoint file to use for"
                      " making the predictions (--checkpoint_file <file>).")
@@ -59,7 +60,7 @@ with graph.as_default():
         # Collect the predictions here
         all_predictions = []
         id = 1
-        for row in traindata:
+        for row in validation_data:
             if id % 100 == 0:
                 print("done tweets: {:d}".format(id))
             prediction = sess.run(predictions, {input_x: [row], dropout_keep_prob: 1.0})[0]
