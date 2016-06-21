@@ -128,8 +128,6 @@ def spell_correction2(word):
     return None
 
 
-
-
 def delete_duplicate_letters(word):
     prev = None
     res = []

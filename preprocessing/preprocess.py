@@ -147,7 +147,17 @@ def pickle_vocab_and_embeddings(file_prefix, has_counts):
     X = np.empty( (len(extra_words)+len(pretrained)+1 ,embedding_dim) )
     X[0:len(extra_words)+1] = np.random.uniform(-0.25, 0.25,
                                                 size=(len(extra_words)+1, embedding_dim))
-    print("create word2vec lookup table..")
+
+    # Print some detailed information about the embeddings.
+    print("Creating word2vec lookup table...")
+    print("Model stats:")
+    print("Corpus size:                     {0}".format(model.corpus_count))
+    print("Vector dimensionality:           {0}".format(embedding_dim))
+    print("Bash-generated vocabulary size:  {0}".format(len(vocab)))
+    print("W2V model vocabulary size:       {0}".format(len(model.vocab.keys())))
+
+    print("Sample from w2v model: ", list(model.vocab.keys())[:25])
+    print("Sample from vocabulary:", list(list(vocab.keys())[:25]))
 
     assert index == len(extra_words)+1
 
@@ -208,51 +218,6 @@ def pickle_vocab_and_embeddings(file_prefix, has_counts):
           .format(len(pretrained), len(extra_words)+1))
 
     return vocab
-
-
-def pickle_word_embeddings(vocab, file_prefix):
-    """Pickles word embeddings into a easy-to-load numpy format.
-
-    Only pickles embeddings which we actually use, which is especially useful
-    when dealing with huge pre-trained embedding datasets.
-    """
-    raise RuntimeError("Deprecated.")
-    # TODO(andrei): Support hybrid approach.
-    if FLAGS.pretrained_w2v:
-        fname = FLAGS.pretrained_w2v_file
-        print("Using pre-trained word2vec vectors from '{0}'.".format(fname))
-        model = Word2Vec.load_word2vec_format(fname, binary=True)
-    else:
-        fname = FLAGS.local_w2v_file
-        print("Using locally-trained word2vec vectors from '{0}'.".format(
-            fname))
-        model = Word2Vec.load(fname)
-
-    embedding_dim = model.vector_size
-    changed = 0
-
-    # TODO(andrei): Consider initializing unknown embeddings with smaller
-    # values.
-    X = np.random.uniform(-0.25, 0.25, size=(len(vocab), embedding_dim))
-    print("Creating word2vec lookup table...")
-    print("Model stats:")
-    print("Corpus size:                     {0}".format(model.corpus_count))
-    print("Vector dimensionality:           {0}".format(embedding_dim))
-    print("Bash-generated vocabulary size:  {0}".format(len(vocab)))
-    print("W2V model vocabulary size:       {0}".format(len(model.vocab.keys())))
-
-    print("Sample from w2v model: ", list(model.vocab.keys())[:25])
-    print("Sample from vocabulary:", list(list(vocab.keys())[:25]))
-
-    for word in vocab:
-        if word in model:
-            changed += 1
-            X[vocab[word]] = model[word]
-
-    np.save('../data/preprocessing/{}-embeddings'.format(file_prefix), X)
-    print("Embeddings pickled.")
-    print("Used {} pre-trained word2vec vectors and {} new random vectors."
-          .format(changed, (len(vocab) - changed)))
 
 
 def handle_hashtags_and_mappings(line, vocab):
