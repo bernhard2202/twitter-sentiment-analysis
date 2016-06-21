@@ -40,14 +40,13 @@ tf.flags.DEFINE_boolean("vocab_has_counts", False,
                         "Whether the cut vocabulary file given also contains"
                         " each token's counts. This is the case when using"
                         " Nikos's preprocessing scheme.")
-
-# tf.flags.DEFINE_integer("min_occurrence_count", 5,
-#                         "The minimum number of times a word has to appear in"
-#                         " our corpus in order to consider a real word vector"
-#                         " for it, as opposed to just giving it a random one."
-#                         " This flag is useful when using Nikos's preprocessing"
-#                         " scheme, since this scheme no longer pre-trims"
-#                         " the words by their count in 'vocab_cut.txt'.")
+tf.flags.DEFINE_integer("min_occurrence_count", 5,
+                        "The minimum number of times a word has to appear in"
+                        " our corpus in order to consider a real word vector"
+                        " for it, as opposed to just giving it a random one."
+                        " This flag is useful when using Nikos's preprocessing"
+                        " scheme, since this scheme no longer pre-trims"
+                        " the words by their count in 'vocab_cut.txt'.")
 
 FLAGS = tf.flags.FLAGS
 
@@ -65,33 +64,9 @@ with open(MAPPINGS_FOLDER + "mappings.pkl", 'rb') as f:
 print("Finished loading pre-computed mappings.")
 
 
-def word_filter(word):
-    # TODO(andrei): Is this still necessary after Nikos's stage 1 preprocessing?
-    word = ''.join(i for i in word if not i.isdigit())
-    if len(word) < 2:
-        return None
-
-    # remove hashtags in beginning
-    # if word[0] == '#':
-    #     return None
-    #    word = word[1:]
-
-    # stopwords
-    # if word in stopwords:
-    #    return None
-
-    # remove numbers
-    # if numberPattern.match(word) is not None:
-    #    return None
-
-    # remove single chars
-
-    return word
-
-
 def filter_with_voc(word, voc):
-    word = word_filter(word)
-    if (word is not None) and (word in voc):
+    word = ''.join(i for i in word if not i.isdigit())
+    if (len(word) >= 2) and (word in voc):
         return word
     else:
         return None
@@ -116,23 +91,22 @@ def pickle_vocab_and_embeddings(file_prefix, has_counts):
     # i = 1
     # words = set()
 
-    print("WARNING: IGNORING 'has_counts' flag for now while testing custom mappings.")
     if has_counts:
         print("Assuming vocabulary file also contains frequencies.")
     else:
         print("Assuming vocabulary file contains no frequency info and just has"
               " exactly one token per line.")
 
-    for word in extra_words:
-        if word in pretrained:
-            print("In extra_words and pretrained simultaneously!: " + word)
+    if FLAGS.advanced:
+        for word in extra_words:
+            if word in pretrained:
+                print("In extra_words and pretrained simultaneously!: " + word)
 
-        vocab[word] = index
-        vocab_inv[index] = word
-        index += 1
+            vocab[word] = index
+            vocab_inv[index] = word
+            index += 1
 
     # Handle word embeddings
-
     if FLAGS.pretrained_w2v:
         fname = FLAGS.pretrained_w2v_file
         print("Using pre-trained word2vec vectors from '{0}'.".format(fname))
@@ -144,14 +118,12 @@ def pickle_vocab_and_embeddings(file_prefix, has_counts):
         model = Word2Vec.load(fname)
 
     embedding_dim = model.vector_size
-    X = np.empty( (len(extra_words)+len(pretrained)+1 ,embedding_dim) )
-    X[0:len(extra_words)+1] = np.random.uniform(-0.25, 0.25,
-                                                size=(len(extra_words)+1, embedding_dim))
 
     # Print some detailed information about the embeddings.
     print("Creating word2vec lookup table...")
     print("Model stats:")
-    print("Corpus size:                     {0}".format(model.corpus_count))
+    if hasattr(model, 'corpus_count'):
+        print("Corpus size:                     {0}".format(model.corpus_count))
     print("Vector dimensionality:           {0}".format(embedding_dim))
     print("Bash-generated vocabulary size:  {0}".format(len(vocab)))
     print("W2V model vocabulary size:       {0}".format(len(model.vocab.keys())))
@@ -159,46 +131,61 @@ def pickle_vocab_and_embeddings(file_prefix, has_counts):
     print("Sample from w2v model: ", list(model.vocab.keys())[:25])
     print("Sample from vocabulary:", list(list(vocab.keys())[:25]))
 
-    assert index == len(extra_words)+1
-
     # TODO(andrei): Pass 'pretrained' to this function.
-    for word in pretrained:
-        vocab[word] = index
-        vocab_inv[index] = word
-        X[index] = model[word]
-        index += 1
+    if FLAGS.advanced:
+        assert index == len(extra_words)+1
 
-    # This was the old functionality.
-    # with open(VOCAB_FILE_NAME) as f:
-    #     for idx, line in enumerate(f):
-    #         if has_counts:
-    #             # Line has format '<count> <token>'.
-    #             freq, word = line.split()
-    #             word = word_filter(word.strip())
-    #
-    #             # In this scenario, 'vocab_cut' still includes very rare words,
-    #             # so we need to ensure we don't save their embeddings, since
-    #             # they're probably useless and just take up disk space.
-    #             if int(freq) < FLAGS.min_occurrence_count:
-    #                 continue
-    #         else:
-    #             # Line has format '<token>'.
-    #             word = word_filter(line.strip())
-    #
-    #         # word not filtered in preprocessing and word
-    #         # unique after filtering
-    #         i += 1
-    #         if (word is not None) and (word not in words):
-    #             words.add(word)
-    #             vocab[word] = index
-    #             vocab_inv[index] = word
-    #             index += 1
+        X = np.empty((len(extra_words)+len(pretrained)+1, embedding_dim))
+        X[0:len(extra_words)+1] = np.random.uniform(-0.25, 0.25,
+                                                    size=(len(extra_words)+1,
+                                                          embedding_dim))
+        for word in pretrained:
+            vocab[word] = index
+            vocab_inv[index] = word
+            X[index] = model[word]
+            index += 1
 
-    # sanity checks
-    # assert len(vocab) == (len(words) + 1) == len(vocab_inv)
-    print("len(vocab)= {}".format(len(vocab)))
-    print("len(vocab_inv)= {}".format(len(vocab_inv)))
-    print("len(extra_words)+len(pretrained)+1= {}".format(len(extra_words)+len(pretrained)+1))
+        print("len(vocab)= {}".format(len(vocab)))
+        print("len(vocab_inv)= {}".format(len(vocab_inv)))
+        print("len(extra_words)+len(pretrained)+1= {}".format(
+            len(extra_words)+len(pretrained)+1))
+    else:
+        words = set()
+        with open(VOCAB_FILE_NAME) as f:
+            for idx, line in enumerate(f):
+                if has_counts:
+                    # Line has format '<count> <token>'.
+                    freq, word = line.split()
+                    word = word_filter(word.strip())
+
+                    # In this scenario, 'vocab_cut' still includes very rare
+                    # words, so we need to ensure we don't save their
+                    # embeddings, since they're probably useless and would just
+                    # take up disk space.
+                    if int(freq) < FLAGS.min_occurrence_count:
+                        continue
+                else:
+                    # Line has format '<token>'.
+                    word = word_filter(line.strip())
+
+                # word not filtered in preprocessing and word
+                # unique after filtering
+                if (word is not None) and (word not in words):
+                    words.add(word)
+                    vocab[word] = index
+                    vocab_inv[index] = word
+                    index += 1
+
+        # Sanity check
+        assert len(vocab) == (len(words) + 1) == len(vocab_inv)
+
+        # Now we finally set X up.
+        X = np.random.uniform(-0.25, 0.25, size=(len(vocab), embedding_dim))
+        changed = 0
+        for word in vocab:
+            if word in model:
+                changed += 1
+                X[vocab[word]] = model[word]
 
     # Save vocabulary
     vocab_fname = '../data/preprocessing/{}-vocab.pkl'.format(file_prefix)
@@ -209,13 +196,17 @@ def pickle_vocab_and_embeddings(file_prefix, has_counts):
         pickle.dump(vocab_inv, f, protocol=2)
 
     print("Vocabulary pickled in [{}] and [{}].".format(vocab_fname, vocab_inv_fname))
-    # print("Total number of unique words = {}; words filterd by preprocessing = {}".format(len(vocab), (i - index)))
 
     # Save embeddings
     np.save('../data/preprocessing/{}-embeddings'.format(file_prefix), X)
     print("Embeddings pickled.")
-    print("Used {} pre-trained word2vec vectors and {} new random vectors."
-          .format(len(pretrained), len(extra_words)+1))
+
+    if FLAGS.advanced:
+        print("Used {} pre-trained word2vec vectors and {} new random vectors."
+              .format(len(pretrained), len(extra_words)+1))
+    else:
+        print("Used {} pre-trained word2vec vectors and {} new random vectors."
+              .format(changed, (len(vocab) - changed)))
 
     return vocab
 
