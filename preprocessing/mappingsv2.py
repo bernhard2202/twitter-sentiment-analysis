@@ -15,12 +15,12 @@ VOCAB_FILE_NAME = "../data/preprocessing/vocab_cut.txt"
 
 # TODO(andrei): Experiment with locally-trained embeddings.
 WORD2VEC_FILE_NAME = "../data/word2vec/GoogleNews-vectors-negative300.bin"
-WORD_FREQ_DICT = "../data/preprocessing/20k.txt"
 MAPPINGS_FILE_NAME = "../data/preprocessing/mappings/mappings.pkl"
 MAPPINGS_FOLDER = "../data/preprocessing/mappings/"
 HIGH_FREQUENCY = 10
 LOW_FREQUENCY = 4    # TODO experiment with different values. i believe we should increase it
 HASH_TAG_FREQ_BOUND = 80
+MIN_SPELL_CORRECTION_LENGTH = 5
 
 if not os.path.exists(MAPPINGS_FOLDER):
     os.makedirs(MAPPINGS_FOLDER)
@@ -91,7 +91,8 @@ def spell_correction2(word):
     correct_word = None
     if word in model:
         correct_word = word   #found a solution
-    elif len(word) > 4:   # if the word is too small do not try to find a correction.
+    # if the word is too small do not try to find a correction.
+    elif len(word) >= MIN_SPELL_CORRECTION_LENGTH:
         split_words, split_score  = split_to_2_words(word)    # "decision making", 45000
         #TODO correct mistake
         ed1 = edits1(word)
@@ -184,7 +185,11 @@ def main():
             #try to match the word with word2vec
             if word in model:
                 pretrained.add(word)
-            else:  # try spelling correction
+            else:
+                # TODO(andrei): Keep track of more advanced statistics regarding
+                # corrections and similar modifications.
+
+                # try spelling correction
                 if freq > HIGH_FREQUENCY:   # add it without doing spelling correction
                     extra_words[word] = freq
                 elif spell_correction(word): # we found correction
