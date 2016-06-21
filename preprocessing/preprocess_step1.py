@@ -16,8 +16,9 @@ def main():
     num = re.compile(r"\d+")                            # substitute with <num>
 
     # specific patters for ending of line
-    adv1_pattern = re.compile(r"\([^\(\)]*\.\.\.\s<url>$")
-    adv2_pattern = re.compile(r"\([^\(\)]*\s<url>$")
+    # Disabled for the moment, as they are a little to data-specific.
+    # adv1_pattern = re.compile(r"\([^\(\)]*\.\.\.\s<url>$")
+    # adv2_pattern = re.compile(r"\([^\(\)]*\s<url>$")
 
     for fin, fout in [(FULL_POS_ORIG_FILE_NAME, FULL_POS_FILE_NAME),
                       (FULL_NEG_ORIG_FILE_NAME, FULL_NEG_FILE_NAME),
@@ -84,11 +85,12 @@ def main():
 
 
                 # check some specific patterns in line. probably useless
-                if bool(re.search(adv1_pattern, line)):
-                    result.append("<adv1>")
-                elif bool(re.search(adv2_pattern, line)) and not line.endswith("( <user> live on <url>\n") \
-                        and not line.endswith("( <user> <url>\n"):
-                    result.append("<adv2>")
+                # Disabled for being too data-specific.
+                # if bool(re.search(adv1_pattern, line)):
+                #     result.append("<adv1>")
+                # elif bool(re.search(adv2_pattern, line)) and not line.endswith("( <user> live on <url>\n") \
+                #         and not line.endswith("( <user> <url>\n"):
+                #     result.append("<adv2>")
 
                 out.write(' '.join(result) + "\n")
 
