@@ -495,7 +495,7 @@ def main():
         validate_x = prepare_valid_data(max_sentence_length, vocab)
     else:
         validate_x = prepare_valid_data_old(max_sentence_length, vocab)
-    np.save("../data/preprocessing/{0}-validateX".format(prefix), validate_x)
+    np.save("../data/preprocessing/validateX", validate_x)
 
 
 if __name__ == "__main__":
