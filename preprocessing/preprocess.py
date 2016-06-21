@@ -64,9 +64,17 @@ with open(MAPPINGS_FOLDER + "mappings.pkl", 'rb') as f:
 print("Finished loading pre-computed mappings.")
 
 
-def filter_with_voc(word, voc):
+def word_filter(word):
     word = ''.join(i for i in word if not i.isdigit())
-    if (len(word) >= 2) and (word in voc):
+    if len(word) < 2:
+        return None
+    else:
+        return word
+
+
+def filter_with_voc(word, voc):
+    word = word_filter(word)
+    if word is not None and (word in voc):
         return word
     else:
         return None
@@ -74,12 +82,15 @@ def filter_with_voc(word, voc):
 
 def pickle_vocab_and_embeddings(file_prefix, has_counts):
     """
-    pickle vocabulary
+    Pickles the vocabulary and embeddings for easy loading in training stage.
 
     Arguments:
-        'has_counts': Whether the cut vocabulary file given also contains each
-                      token's counts. This is the case when using Nikos's
-                      preprocessing scheme.
+        file_prefix: Prefix to use when saving output, useful for
+                     discerning between saved data for full or partial (subset)
+                     training.
+        has_counts: Whether the cut vocabulary file given also contains each
+                    token's counts. This is the case when using Nikos's
+                    preprocessing scheme.
     """
     vocab = dict()
     vocab_inv = dict()
@@ -88,8 +99,6 @@ def pickle_vocab_and_embeddings(file_prefix, has_counts):
     vocab["<PAD/>"] = index
     vocab_inv[index] = "<PAD/>"
     index += 1
-    # i = 1
-    # words = set()
 
     if has_counts:
         print("Assuming vocabulary file also contains frequencies.")
@@ -117,9 +126,8 @@ def pickle_vocab_and_embeddings(file_prefix, has_counts):
             fname))
         model = Word2Vec.load(fname)
 
-    embedding_dim = model.vector_size
-
     # Print some detailed information about the embeddings.
+    embedding_dim = model.vector_size
     print("Creating word2vec lookup table...")
     print("Model stats:")
     if hasattr(model, 'corpus_count'):
