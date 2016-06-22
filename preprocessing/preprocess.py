@@ -465,7 +465,7 @@ def main():
     if FLAGS.advanced:
         print("\nUsing ADVANCED preprocessing (e.g. automatic spelling "
               " correction, smart hashtag splitting, etc.).\n")
-        if FLAGS.split_hashtags:
+        if not FLAGS.split_hashtags:
             print("Ignoring 'split_hashtags' flag in this mode, and doing"
                   " smart splitting anyway.")
         if not FLAGS.pretrained_w2v:
