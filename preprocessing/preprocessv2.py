@@ -35,6 +35,7 @@ def vocab_and_embeddings():
     vocab_inv[index] = "<PAD/>"
     index += 1
 
+    print("We have {0} extra words.".format(len(extra_words)))
     for word in extra_words:
         if word in pretrained:
             print("in extra_words and pretrained simultaneously!: "+word)
@@ -147,6 +148,9 @@ def prepare_data(train_pos_file, train_neg_file, train_size, vocab, max_sentence
     pos = 0
     cut = 0
     empty = 0
+    print("prepare_data: len(vocab) = {0}".format(len(vocab)))
+    print("Train neg file: {0}; Train pos file: {1}".format(train_neg_file,
+                                                            train_pos_file))
     for filename in [train_neg_file, train_pos_file]:
         with open(filename) as f:
             for line in f:
@@ -182,6 +186,8 @@ def prepare_data(train_pos_file, train_neg_file, train_size, vocab, max_sentence
 
     print("{} tweets cut to max sentence lenght and {} tweets disapeared due to filtering."
           .format(cut, empty))
+    print("Train X shape: {0}".format(train_X.shape))
+    print("Train y shape: {0}".format(train_Y.shape))
     return train_X, train_Y
 
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import pickle
 
 from gensim.models.word2vec import Word2Vec
@@ -14,6 +15,8 @@ POS_FILE_NAME = "../data/train/train_pos.txt"
 NEG_FILE_NAME = "../data/train/train_neg.txt"
 VALID_FILE_NAME = "../data/test/test_data.txt"
 VOCAB_FILE_NAME = "../data/preprocessing/vocab_cut.txt"
+# Mappings used by the advanced preprocessing code, computed by 'mappingsv2.py'.
+MAPPINGS_FOLDER = "../data/preprocessing/mappings/"
 
 tf.flags.DEFINE_boolean("pretrained_w2v", False, "Whether to use official Google pre-trained"
                                                  " word2vec vectors, or locally-trained ones."
@@ -34,7 +37,6 @@ tf.flags.DEFINE_boolean("full", False, "Whether to use the full Twitter dataset.
 tf.flags.DEFINE_integer("sentence_length", 30, "The maximum sentence length to"
                                                " consider (in words)."
                                                " (default: 30)")
-# TODO(andrei): Unify this part with Nikos's advanced second stage of corrections.
 tf.flags.DEFINE_boolean("split_hashtags", True, "Whether to attempt to split hashtags.")
 tf.flags.DEFINE_boolean("vocab_has_counts", False,
                         "Whether the cut vocabulary file given also contains"
@@ -55,13 +57,13 @@ VALID_SIZE = 10000
 FULL_TRAIN_SIZE = 2500000
 SMALL_TRAIN_SIZE = 200000
 
-# TODO(andrei): Option to ignore mappings.
-# TODO(andrei): Clean-up mapping loading code.
-MAPPINGS_FOLDER = "../data/preprocessing/mappings/"
-print("Loading pre-computed mappings...")
-with open(MAPPINGS_FOLDER + "mappings.pkl", 'rb') as f:
-    (mappings, pretrained, extra_words) = pickle.load(f)
-print("Finished loading pre-computed mappings.")
+
+def load_mappings():
+    mappings_fname = os.path.join(MAPPINGS_FOLDER, "mappings.pkl")
+    with open(mappings_fname, 'rb') as f:
+        (mappings, pretrained, extra_words) = pickle.load(f)
+    print("Finished loading pre-computed mappings.")
+    return mappings, pretrained, extra_words
 
 
 def word_filter(word):
@@ -80,7 +82,8 @@ def filter_with_voc(word, voc):
         return None
 
 
-def pickle_vocab_and_embeddings(file_prefix, has_counts):
+def pickle_vocab_and_embeddings(file_prefix, has_counts, pretrained,
+                                extra_words):
     """
     Pickles the vocabulary and embeddings for easy loading in training stage.
 
@@ -91,6 +94,12 @@ def pickle_vocab_and_embeddings(file_prefix, has_counts):
         has_counts: Whether the cut vocabulary file given also contains each
                     token's counts. This is the case when using Nikos's
                     preprocessing scheme.
+        pretrained: A map of 'word' -> 'embedding' for pretrained word vectors.
+                    Only used when '--advanced' is enabled.
+        extra_words: A list of words which don't have their own pre-trained
+                     embedding, but are still common enough to want to keep
+                     around.
+                     Only used when '--advanced' is enabled.
     """
     vocab = dict()
     vocab_inv = dict()
@@ -107,9 +116,11 @@ def pickle_vocab_and_embeddings(file_prefix, has_counts):
               " exactly one token per line.")
 
     if FLAGS.advanced:
+        print("Processing extra words.")
+        print("We have {0} extra words.".format(len(extra_words)))
         for word in extra_words:
             if word in pretrained:
-                print("In extra_words and pretrained simultaneously!: " + word)
+                print("WARNING! In extra_words and pretrained simultaneously!: " + word)
 
             vocab[word] = index
             vocab_inv[index] = word
@@ -139,7 +150,6 @@ def pickle_vocab_and_embeddings(file_prefix, has_counts):
     print("Sample from w2v model: ", list(model.vocab.keys())[:25])
     print("Sample from vocabulary:", list(list(vocab.keys())[:25]))
 
-    # TODO(andrei): Pass 'pretrained' to this function.
     if FLAGS.advanced:
         assert index == len(extra_words)+1
 
@@ -219,7 +229,19 @@ def pickle_vocab_and_embeddings(file_prefix, has_counts):
     return vocab
 
 
-def handle_hashtags_and_mappings(line, vocab):
+def handle_hashtags_and_mappings(line, vocab, mappings):
+    """Perform hashtag processing and corrected word substitutions.
+
+    Args:
+        line: The current text line (tweet) to process.
+        vocab: A map of words to their indexes.
+        mappings: Word mappings, such as corrections (map wrong word to
+                  corrected  one).
+                  Only used when '--advanced' is enabled.
+
+    Returns:
+        The updated text line as a full string.
+    """
     # Part of Nikos's second stage of preprocessing.
     result_line = []
     for word in line.split():
@@ -285,8 +307,12 @@ def handle_hashtags(line, vocab):
 
 
 def prepare_data(train_pos_file, train_neg_file, train_size, vocab,
-                 max_sentence_length):
-    """Prepares the training data."""
+                 max_sentence_length, mappings):
+    """Prepares the training data.
+
+    Args:
+        mappings: See 'handle_hashtags_and_mappings'.
+    """
     train_X = np.zeros((train_size, max_sentence_length))
     train_Y = np.zeros((train_size, 2))
     # sanity check because we initialize with zero then we don't have to do padding
@@ -295,6 +321,9 @@ def prepare_data(train_pos_file, train_neg_file, train_size, vocab,
     pos = 0
     cut = 0
     empty = 0
+    print("prepare_data: len(vocab) = {0}".format(len(vocab)))
+    print("Train neg file: {0}; Train pos file: {1}".format(train_neg_file,
+                                                            train_pos_file))
     for filename in [train_neg_file, train_pos_file]:
         with open(filename) as f:
             for line in f:
@@ -303,7 +332,7 @@ def prepare_data(train_pos_file, train_neg_file, train_size, vocab,
                 j = 0
                 #print("before handle_hashtags: {}".format(line))
                 if FLAGS.advanced:
-                    line = handle_hashtags_and_mappings(line, vocab)
+                    line = handle_hashtags_and_mappings(line, vocab, mappings)
                 else:
                     line = handle_hashtags(line, vocab)
                 #print("after handle_hashtags: {}".format(line))
@@ -346,6 +375,8 @@ def prepare_data(train_pos_file, train_neg_file, train_size, vocab,
 
     print("{} tweets cut to max sentence length and {} tweets disappeared due"
           " to filtering.".format(cut, empty))
+    print("Train X shape: {0}".format(train_X.shape))
+    print("Train y shape: {0}".format(train_Y.shape))
     return train_X, train_Y
 
 
@@ -380,7 +411,11 @@ def prepare_valid_data_old(max_sentence_length, vocab):
     return validate_x
 
 
-def prepare_valid_data(max_sentence_length, vocab):
+def prepare_valid_data(max_sentence_length, vocab, mappings):
+    """
+    Args:
+        mappings: See 'handle_hashtags_and_mappings'.
+    """
     assert FLAGS.advanced, "Should only be used in advanced mode."
     validate_x = np.zeros((VALID_SIZE, max_sentence_length))
     i = 0
@@ -390,7 +425,7 @@ def prepare_valid_data(max_sentence_length, vocab):
         for tweet in f:
             tweet = tweet.strip()
             tweet = tweet[6:]   # remove prefix   "<num>,"
-            tweet = handle_hashtags_and_mappings(tweet, vocab)
+            tweet = handle_hashtags_and_mappings(tweet, vocab, mappings)
 
             j = 0
             for word in tweet.split():
@@ -428,8 +463,8 @@ def main():
         print("Using full vocabulary, but only subset of tweets.")
 
     if FLAGS.advanced:
-        print("Using ADVANCED preprocessing (e.g. automatic spelling "
-              " correction, smart hashtag splitting, etc.).")
+        print("\nUsing ADVANCED preprocessing (e.g. automatic spelling "
+              " correction, smart hashtag splitting, etc.).\n")
         if FLAGS.split_hashtags:
             print("Ignoring 'split_hashtags' flag in this mode, and doing"
                   " smart splitting anyway.")
@@ -440,23 +475,29 @@ def main():
     else:
         print("Using SIMPLE preprocessing (e.g. NO spelling correction).")
         if FLAGS.split_hashtags:
-            # TODO(andrei): Ensure message correctness.
             print("Will attempt to split encountered hashtags.")
         else:
             print("Will NOT attempt to split encountered hashtags.")
 
+    if FLAGS.advanced:
+        print("Loading advanced mode mappings...")
+        mappings, pretrained, extra_words = load_mappings()
+    else:
+        mappings = pretrained = extra_words = None
+
     print("Pickling vocabulary and embeddings (this can take some time)...")
-    vocab = pickle_vocab_and_embeddings(prefix, FLAGS.vocab_has_counts)
+    vocab = pickle_vocab_and_embeddings(prefix, FLAGS.vocab_has_counts,
+                                        pretrained, extra_words)
 
     print("Preparing training data...")
     X, Y = prepare_data(train_pos_file,train_neg_file, train_size, vocab,
-                        max_sentence_length)
+                        max_sentence_length, mappings)
     np.save("../data/preprocessing/{0}-trainX".format(prefix), X)
     np.save("../data/preprocessing/{0}-trainY".format(prefix), Y)
 
     print('Preparing validation data...')
     if FLAGS.advanced:
-        validate_x = prepare_valid_data(max_sentence_length, vocab)
+        validate_x = prepare_valid_data(max_sentence_length, vocab, mappings)
     else:
         validate_x = prepare_valid_data_old(max_sentence_length, vocab)
     np.save("../data/preprocessing/validateX", validate_x)
