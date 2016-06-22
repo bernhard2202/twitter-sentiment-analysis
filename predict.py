@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 
 import pickle
+# Used for reliably getting the current hostname.
 import socket
 import time
 
@@ -9,26 +10,20 @@ import time
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
 tf.flags.DEFINE_integer("batch_size", 1, "Batch Size (default: 1)")
-tf.flags.DEFINE_string("checkpoint_dir", "", "Checkpoint directory from training run")
+
+# Example: './data/runs/euler/local-w2v-275d-1466050948/checkpoints/model-96690'
+tf.flags.DEFINE_string("checkpoint_file", None, "Checkpoint file from the"
+                                                " training run.")
 FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
 
-print("Loading data...")
-# with open('./data/preprocessing/vocab.pkl', 'rb') as f:
-#     vocabulary = pickle.load(f)
-# with open('./data/preprocessing/vocab.pkl', 'rb') as f:
-#     vocabulary_inv = pickle.load(f)
-# print("Vocabulary size: {:d}".format(len(vocabulary)))
+validation_data_fname = './data/preprocessing/validateX.npy'
+validation_data = np.load(validation_data_fname)
+if FLAGS.checkpoint_file is None:
+    raise ValueError("Please specify a TensorFlow checkpoint file to use for"
+                     " making the predictions (--checkpoint_file <file>).")
 
-traindata = np.load('./data/preprocessing/validateX.npy')
-
-# checkpoint_file = "./data/runs/1462215568/checkpoints/model-246092"
-# This one (131k steps over full dataset) is likely to be quite overfit.
-# checkpoint_file = './data/runs/1465891958-prebuilt-w2v/checkpoints/model-131850'
-# 100k seems prety bad. 110-120k seems best at the moment.
-# checkpoint_file = './data/runs/1465891958-prebuilt-w2v/checkpoints/model-100000'
-checkpoint_file = './data/runs/euler/1465939515/checkpoints/model-79110'
-
+checkpoint_file = FLAGS.checkpoint_file
 timestamp = int(time.time())
 filename = "./data/output/prediction_cnn_{0}.csv".format(timestamp)
 meta_filename = "{0}.meta".format(filename)
@@ -37,6 +32,7 @@ print("Will write predictions to file [{0}].".format(filename))
 
 graph = tf.Graph()
 with graph.as_default():
+    # TODO(andrei): Is this config (and its associated flags) really necessary?
     session_conf = tf.ConfigProto(
       allow_soft_placement=FLAGS.allow_soft_placement,
       log_device_placement=FLAGS.log_device_placement)
@@ -57,7 +53,7 @@ with graph.as_default():
         # Collect the predictions here
         all_predictions = []
         id = 1
-        for row in traindata:
+        for row in validation_data:
             if id % 100 == 0:
                 print("done tweets: {:d}".format(id))
             prediction = sess.run(predictions, {input_x: [row], dropout_keep_prob: 1.0})[0]

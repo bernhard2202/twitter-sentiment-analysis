@@ -1,0 +1,30 @@
+# Default LR was 0.0001.
+# Set LR = 0.000075 but doesn't seem to affect the training.
+# Set LR = 0.001 and the results were shit.
+
+# Set embedding size == 350. Results worse than pre-trained w2v.
+# Set embedding size == 275. Results even worse.
+# Set embedding size == 225. Yep, even worse.
+
+ * Embedding size == 350
+    * 3,4,5,7 filter sizes and 256 of each. (0.85580)
+ * Keep embeddings at 300 or 350 and use larger filter size.
+    * Doesn't help almost at all.
+    * Perhaps could be tried once we get a really better model.
+
+Fixed w2v bug (18 Jun)
+
+ * Embedding size == 300
+   * 1st stage of Nikos's preprocessing (0.85840)
+        - used local-trained 300d word2vec
+   * 2nd stage of Nikos's preprocessing (0.86160)
+        - used pre-computed embeddings by design
+        - increased max sentence length to 35 instead of 30
+
+## Experiments to do
+ * Same as above, but with pretrained GloVe
+ * Same as above, but with local GloVe
+ * [LOW] Embedding size 400 (will be slower to train).
+ * [LOW] Submit local-trained 225-d results to kaggle. Should be worse than 275-d.
+ * [LOW, complex] Another convolution layer?
+ * [LOW, complex, investigating] Different architecture: RNN.
