@@ -7,9 +7,11 @@ import sys
 
 import gensim
 
-"""read the sorted cut_vocab.txt     which has format:
+"""
+read the sorted cut_vocab.txt     which has format:
 freq word
-and try to map it to word2vec pretrained words."""
+and try to map it to word2vec pretrained words.
+"""
 
 VOCAB_FILE_NAME = "../data/preprocessing/vocab_cut.txt"
 

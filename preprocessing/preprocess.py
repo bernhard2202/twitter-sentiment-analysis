@@ -15,7 +15,7 @@ POS_FILE_NAME = "../data/train/train_pos.txt"
 NEG_FILE_NAME = "../data/train/train_neg.txt"
 VALID_FILE_NAME = "../data/test/test_data.txt"
 VOCAB_FILE_NAME = "../data/preprocessing/vocab_cut.txt"
-# Mappings used by the advanced preprocessing code, computed by 'mappingsv2.py'.
+# Mappings used by the advanced preprocessing code, computed by 'word_mappings.py'.
 MAPPINGS_FOLDER = "../data/preprocessing/mappings/"
 
 tf.flags.DEFINE_boolean("pretrained_w2v", False, "Whether to use official Google pre-trained"

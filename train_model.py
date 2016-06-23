@@ -36,7 +36,7 @@ def batch_iter(data, batch_size, num_epochs):
 tf.flags.DEFINE_string("filter_sizes", "3,4,5", "Comma-separated filter sizes (default: '3,4,5')")
 tf.flags.DEFINE_integer("num_filters", 128, "Number of filters per filter size (default: 128)")
 tf.flags.DEFINE_float("dropout_keep_prob", 0.5, "Dropout keep probability (default: 0.5)")
-tf.flags.DEFINE_float("l2_reg_lambda", 0.0, "L2 regularizaion lambda (default: 0.0)")
+tf.flags.DEFINE_float("l2_reg_lambda", 0.0, "L2 regularization lambda (default: 0.0)")
 
 # Training parameters
 tf.flags.DEFINE_integer("batch_size", 64, "Batch Size (default: 64)")
@@ -46,6 +46,8 @@ tf.flags.DEFINE_integer("checkpoint_every", 100, "Evaluate model on dev set afte
 tf.flags.DEFINE_integer("output_every", 1, "Output current training error after this many steps (default: 1)")
 tf.flags.DEFINE_float("learning_rate", 1e-4, "Adam Optimizer learning rate (default: 1e-4)")
 tf.flags.DEFINE_float("dev_ratio", 0.1, "Percentage of data used for validation. Between 0 and 1. (default: 0.1)")
+tf.flags.DEFINE_integer("test_split", 50,
+                        "Number of splits of the test data to lower memory pressure during. (default:50)")
 
 # Misc Parameters
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
@@ -108,11 +110,9 @@ print("Train/Dev split: {:d}/{:d}".format(len(y_train), len(y_dev)))
 
 # This splits the test data into chunks to lower memory pressure during
 # validation.
-# TODO(andrei): On Euler we normally have ~40Gb of RAM. Could we increase this
-# number then?
-test_split = 200
-x_dev = np.split(x_dev, test_split)
-y_dev = np.split(y_dev, test_split)
+test_split = FLAGS.test_split
+x_dev = np.array_split(x_dev, test_split)
+y_dev = np.array_split(y_dev, test_split)
 
 # Training
 # ==================================================
@@ -140,6 +140,12 @@ with tf.Graph().as_default():
         grads_and_vars = optimizer.compute_gradients(cnn.loss)
         train_op = optimizer.apply_gradients(grads_and_vars, global_step=global_step)
 
+        # Output directory for models and summaries
+        timestamp = str(int(time.time()))
+        # out_dir = os.path.abspath(os.path.join(os.path.curdir, "./data/runs", timestamp))
+        out_dir = os.path.abspath(os.path.join(FLAGS.data_root, 'runs', timestamp))
+        print("Writing to {}\n".format(out_dir))
+
         # Keep track of gradient values and sparsity (optional)
         grad_summaries = []
         for g, v in grads_and_vars:
@@ -148,13 +154,9 @@ with tf.Graph().as_default():
                 sparsity_summary = tf.scalar_summary("{}/grad/sparsity".format(v.name), tf.nn.zero_fraction(g))
                 grad_summaries.append(grad_hist_summary)
                 grad_summaries.append(sparsity_summary)
-        grad_summaries_merged = tf.merge_summary(grad_summaries)
-
-        # Output directory for models and summaries
-        timestamp = str(int(time.time()))
-        # out_dir = os.path.abspath(os.path.join(os.path.curdir, "./data/runs", timestamp))
-        out_dir = os.path.abspath(os.path.join(FLAGS.data_root, 'runs', timestamp))
-        print("Writing to {}\n".format(out_dir))
+        grad_summaries_op = tf.merge_summary(grad_summaries)
+        grad_summaries_dir = os.path.join(out_dir, "summaries", "gradients")
+        grad_summary_writer = tf.train.SummaryWriter(grad_summaries_dir, sess.graph)
 
         # Summaries for loss and accuracy
         loss_summary = tf.scalar_summary("loss", cnn.loss)
@@ -190,10 +192,11 @@ with tf.Graph().as_default():
               cnn.input_y: y_batch,
               cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
             }
-            _, step, summaries, train_loss, train_accuracy = sess.run(
-                [train_op, global_step, train_summary_op, cnn.loss, cnn.accuracy],
+            _, step, train_summary, gradient_summary, train_loss, train_accuracy = sess.run(
+                [train_op, global_step, train_summary_op, grad_summaries_op, cnn.loss, cnn.accuracy],
                 feed_dict)
-            train_summary_writer.add_summary(summaries, step)
+            train_summary_writer.add_summary(train_summary, step)
+            grad_summary_writer.add_summary(gradient_summary, step)
             return train_loss, train_accuracy
 
         def dev_step(x_batch, y_batch):

@@ -88,9 +88,9 @@ def _run_euler():
     sync_data_and_code()
 
     # Custom Euler stuff.
-    put(local_path='./tensor_hello.py',
+    put(local_path='./remote/tensor_hello.py',
         remote_path=os.path.join('~/deploy', 'tensor_hello.py'))
-    put(local_path='./euler_voodoo.sh',
+    put(local_path='./remote/euler_voodoo.sh',
         remote_path=os.path.join('~/deploy', 'euler_voodoo.sh'))
     print("Uploaded data and code. Starting to train.")
 
