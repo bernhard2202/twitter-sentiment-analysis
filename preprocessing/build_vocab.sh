@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 
 # Data files (train and test).
-posFile="../data/train/train_pos_full.txt"
-negFile="../data/train/train_neg_full.txt"
-testFile="../data/test/test_data.txt"
+posFile="./data/train/train_pos_full.txt"
+negFile="./data/train/train_neg_full.txt"
+testFile="./data/test/test_data.txt"
 
 # Backups of the original data files.
-posFileBak="../data/train/train_pos_full_orig.txt"
-negFileBak="../data/train/train_neg_full_orig.txt"
-testFileBak="../data/test/test_data_orig.txt"
+posFileBak="./data/train/train_pos_full_orig.txt"
+negFileBak="./data/train/train_neg_full_orig.txt"
+testFileBak="./data/test/test_data_orig.txt"
 
 # Output files.
-vocabFile="../data/preprocessing/vocab.txt"
-cutVocabFile="../data/preprocessing/vocab_cut.txt"
+vocabFile="./data/preprocessing/vocab.txt"
+cutVocabFile="./data/preprocessing/vocab_cut.txt"
 
 #modified
 if [ ! -f "$posFileBak" ]; then
