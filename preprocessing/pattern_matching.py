@@ -1,5 +1,14 @@
 import re
 
+"""
+Searches for special patterns in the original tweets.
+Those patterns are then handled individually, eg:
+  * numbers are replaced with <num>
+  * alphanumerics are replaced with <alphanum>
+
+This has to run before the vocabulary is build!
+"""
+
 FULL_POS_ORIG_FILE_NAME = "../data/train/train_pos_full_orig.txt"
 FULL_NEG_ORIG_FILE_NAME = "../data/train/train_neg_full_orig.txt"
 TEST_ORIG_FILE_NAME = "../data/test/test_data_orig.txt"
@@ -7,6 +16,13 @@ TEST_ORIG_FILE_NAME = "../data/test/test_data_orig.txt"
 FULL_POS_FILE_NAME = "../data/train/train_pos_full.txt"
 FULL_NEG_FILE_NAME = "../data/train/train_neg_full.txt"
 TEST_FILE_NAME = "../data/test/test_data.txt"
+
+# TODO(Bernhard): look for a emoticon list on the web
+# TODO(Bernhard): look weather those emoticons survive the nex preprocessing step
+#                 or if we should replace them by tags like <positive_emoticon> and <neg...
+
+#  handle specific exceptions. like <3 we don't want it to be converted to <num>
+EMOTICONS = ["<3", ":3"]
 
 
 def main():
@@ -42,9 +58,8 @@ def main():
                             #print("{}\t\t-->\t\t{}".format(word, temp))
                         continue
 
-                    # handle specific exceptions. like <3 we don't want it to be converted to <num>
-                    # TODO(andrei): Extract this as a separate list of custom emoticons.
-                    if word in ["<3"]:  # exception list
+                    #  handle specific exceptions. like <3 we don't want it to be converted to <num>
+                    if word in EMOTICONS:  # exception list
                         result.append(word)
                         continue
 

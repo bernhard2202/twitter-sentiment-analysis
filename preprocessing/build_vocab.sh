@@ -14,12 +14,6 @@ testFileBak="../data/test/test_data_orig.txt"
 vocabFile="../data/preprocessing/vocab.txt"
 cutVocabFile="../data/preprocessing/vocab_cut.txt"
 
-# Note that this script uses GNU-style sed. On Mac OS, you are required to first
-#    brew install gnu-sed --with-default-names
-#original
-#cat "$posFile" "$negFile" "$testFile" | sed "s/ /\n/g" |
-#    grep -v "^\s*$" | sort | uniq -c > "$vocabFile"
-
 #modified
 if [ ! -f "$posFileBak" ]; then
     echo "Creating copy of positive training file [$posFile] as [$posFileBak]."
@@ -37,11 +31,10 @@ if [ ! -f "$testFileBak" ]; then
     #mv ../data/test/test_data.txt ../data/test/test_data_orig.txt
 fi
 
-# TODO(andrei): Consider renaming this step to something more descriptive.
 # Run the first stage of preprocessing right away: this does some smart
 # substitutions, like replacing numbers with '<num>' tokens.
 #echo 'NOT doing preprocessing step #1!!!'
-python3 preprocess_step1.py
+python3 pattern_matching.py
 
 echo 'Finished preprocessing step #1.'
 
@@ -49,12 +42,22 @@ echo 'Building vocabulary...'
 cat "$posFile" "$negFile" "$testFile" | sed "s/ /\n/g" |
   grep -v "^\s*$" | sort | uniq -c > "$vocabFile"
 
-#cat ../data/train/train_pos_full.txt ../data/train/train_neg_full.txt ../data/test/test_data.txt | sed "s/ /\n/g" | grep -v "^\s*$" | sort | uniq -c > ../data/preprocessing/vocab.txt
-
 # Do the cutting right away (no need for second script).
 # Note that this no longer strips away rare words!
 echo 'Cutting vocabulary into tokens... (NOT removing rare words).'
 cat "$vocabFile" | sed "s/^\s\+//g" | sort -rn > "$cutVocabFile"
 #cat ../data/preprocessing/vocab.txt | sed "s/^\s\+//g" | sort -rn > ../data/preprocessing/vocab_cut.txt
 
+echo 'Generate word mappings'
+python3 ./word_mappings.py
+
 echo 'Finished vocabulary processing.'
+
+# Old version of the file.
+# TODO(bernhard: remove once preprocessing is fixed.
+#
+# Note that this script uses GNU-style sed. On Mac OS, you are required to first
+#    brew install gnu-sed --with-default-names
+#
+#cat "$posFile" "$negFile" "$testFile" | sed "s/ /\n/g" |
+#    grep -v "^\s*$" | sort | uniq -c > "$vocabFile"
