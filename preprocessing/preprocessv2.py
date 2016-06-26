@@ -232,16 +232,20 @@ def main(argv):
     train_pos_file = POS_FILE_NAME
     train_neg_file = NEG_FILE_NAME
     train_size = SMALL_TRAIN_SIZE
+    prefix = 'subset'
+
     try:
         opts, args = getopt.getopt(argv, "[fl:]", ["full", "sentence-length="])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
     for opt, arg in opts:
+        # TODO(andrei): Warn when not using full subset!
         if opt in ("-f", "--full"):
             train_pos_file = FULL_POS_FILE_NAME
             train_neg_file = FULL_NEG_FILE_NAME
             train_size = FULL_TRAIN_SIZE
+            prefix = 'full'
             print("train in Full data")
         if opt in ("-s", "--sentence-length"):
             max_sentence_length = int(arg)

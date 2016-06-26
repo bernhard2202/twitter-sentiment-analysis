@@ -52,6 +52,9 @@ def euler(sub='run', label='euler'):
     # on Euler because of all the weird patching required to get it working in
     # the first place.
 
+    # To pass multiple arguments, to a fabric command, use:
+    #  $ fab euler:run,some-label,foo,bar
+
     if sub == 'run':
         _run_euler(label)
     elif sub == 'status':
@@ -94,6 +97,7 @@ def _run_aws():
 
 def _run_euler(run_label):
     print("Will train TF model remotely on Euler.")
+    print("Euler job label: {0}".format(run_label))
     sync_data_and_code()
 
     # Custom Euler stuff.
@@ -115,22 +119,22 @@ def _run_euler(run_label):
         tf_command = ('t=' + ts + ' && mkdir $t && cd $t &&'
                       ' source ../euler_voodoo.sh &&'
                       # Use many cores and run for up to two hours.
-                      ' bsub -n 48 -W 72:00'
+                      ' bsub -n 48 -W 24:00'
                       # These flags tell 'bsub' to send an email to the
                       # submitter when the job starts, and when it finishes.
                       ' -B -N'
                       ' LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/ext/lib" "$HOME"/ext/lib/ld-2.23.so "$HOME"/.venv/bin/python3'
                       # TODO(andrei): Pass these parameters as arguments to fabric.
-                      ' ../train_model.py --num_epochs 12 --lstm'
+                      ' ../train_model.py --num_epochs 11 --nolstm'
                       #' --filter_sizes "3,4,5,7"'
                       ' --data_root ../data'
-                      ' --clip_gradients'
-                      ' --lstm_hidden_size 256 --lstm_hidden_layers 2'
+                      # ' --clip_gradients'
+                      #' --lstm_hidden_size 256 --lstm_hidden_layers 2'
                       # TODO(andrei): RNNs clip gradients. Try a larger learning rate!
                       # LSTM examples using ADAM seem OK with 0.001.
                       ' --learning_rate 0.0001'
-                      ' --dropout_keep_prob 0.75'
-                      ' --batch_size 256 --evaluate_every 1250'
+                      # ' --dropout_keep_prob 0.75'
+                      ' --batch_size 256 --evaluate_every 2500'
                       ' --checkpoint_every 8500 --output_every 500'
                       ' --label "' + run_label + '"')
         run(tf_command, shell_escape=False, shell=False)
@@ -235,6 +239,7 @@ def kill_tensorboard():
     run('killall tensorboard')
 
 
+@hosts('euler')
 def host_type():
     """An example of a Fabric command."""
 
