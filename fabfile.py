@@ -37,14 +37,23 @@ def latest_run_id():
 
 # Hint: set your appropriate user and host for Euler in your '~/.ssh/config'!
 @hosts('euler')
-def euler(sub='run'):
+def euler(sub='run', label='euler'):
+    """
+    Submits the pipeline to Euler's batch job system.
+
+    Arguments:
+        label: An informative label for the job. MUST be a valid file name
+               fragment, such as 'preprocess-v2-bob'. Does NOT get
+               shell-escaped, so use special characters (e.g. spaces, $, etc.)
+               at your own risk!
+    """
     # If something stops working, make sure you're 'rsync'ing everything you
     # need to the remote host! Also, make sure TensorFlow itself isn't broken
     # on Euler because of all the weird patching required to get it working in
     # the first place.
 
     if sub == 'run':
-        _run_euler()
+        _run_euler(label)
     elif sub == 'status':
         run('bjobs')
     elif sub == 'fetch':
@@ -83,7 +92,7 @@ def _run_aws():
         _in_screen(tf_command, shell_escape=False, shell=False)
 
 
-def _run_euler():
+def _run_euler(run_label):
     print("Will train TF model remotely on Euler.")
     sync_data_and_code()
 
@@ -106,18 +115,24 @@ def _run_euler():
         tf_command = ('t=' + ts + ' && mkdir $t && cd $t &&'
                       ' source ../euler_voodoo.sh &&'
                       # Use many cores and run for up to two hours.
-                      ' bsub -n 48 -W 12:00'
-                      # This flag tells 'bsub' to send an email to the submitter
-                      # when the job starts.
-                      ' -B'
+                      ' bsub -n 48 -W 72:00'
+                      # These flags tell 'bsub' to send an email to the
+                      # submitter when the job starts, and when it finishes.
+                      ' -B -N'
                       ' LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/ext/lib" "$HOME"/ext/lib/ld-2.23.so "$HOME"/.venv/bin/python3'
                       # TODO(andrei): Pass these parameters as arguments to fabric.
-                      ' ../train_model.py --num_epochs 14'
+                      ' ../train_model.py --num_epochs 12 --lstm'
                       #' --filter_sizes "3,4,5,7"'
                       ' --data_root ../data'
-                      ' --learning_rate 0.000075'
-                      ' --batch_size 256 --evaluate_every 2500'
-                      ' --checkpoint_every 7500 --output_every 1000')
+                      ' --clip_gradients'
+                      ' --lstm_hidden_size 256 --lstm_hidden_layers 2'
+                      # TODO(andrei): RNNs clip gradients. Try a larger learning rate!
+                      # LSTM examples using ADAM seem OK with 0.001.
+                      ' --learning_rate 0.0001'
+                      ' --dropout_keep_prob 0.75'
+                      ' --batch_size 256 --evaluate_every 1250'
+                      ' --checkpoint_every 8500 --output_every 500'
+                      ' --label "' + run_label + '"')
         run(tf_command, shell_escape=False, shell=False)
 
 

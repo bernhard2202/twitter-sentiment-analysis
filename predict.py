@@ -14,14 +14,21 @@ tf.flags.DEFINE_integer("batch_size", 1, "Batch Size (default: 1)")
 # Example: './data/runs/euler/local-w2v-275d-1466050948/checkpoints/model-96690'
 tf.flags.DEFINE_string("checkpoint_file", None, "Checkpoint file from the"
                                                 " training run.")
+tf.flags.DEFINE_string("validation_data_fname",
+                       "./data/preprocessing/validateX.npy",
+                       "The numpy dump of the validation data for Kaggle."
+                       " Should ideally be preprocessed the same as the"
+                       " training data.")
 FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
 
-validation_data_fname = './data/preprocessing/validateX.npy'
-validation_data = np.load(validation_data_fname)
 if FLAGS.checkpoint_file is None:
     raise ValueError("Please specify a TensorFlow checkpoint file to use for"
                      " making the predictions (--checkpoint_file <file>).")
+
+validation_data_fname = FLAGS.validation_data_fname
+print("Validation data file: {0}".format(validation_data_fname))
+validation_data = np.load(validation_data_fname)
 
 checkpoint_file = FLAGS.checkpoint_file
 timestamp = int(time.time())
@@ -29,6 +36,8 @@ filename = "./data/output/prediction_cnn_{0}.csv".format(timestamp)
 meta_filename = "{0}.meta".format(filename)
 print("Predicting using checkpoint file [{0}].".format(checkpoint_file))
 print("Will write predictions to file [{0}].".format(filename))
+
+print("Validation data shape: {0}".format(validation_data.shape))
 
 graph = tf.Graph()
 with graph.as_default():
@@ -38,32 +47,51 @@ with graph.as_default():
       log_device_placement=FLAGS.log_device_placement)
     sess = tf.Session(config=session_conf)
     with sess.as_default():
-        # Load the saved meta graph and restore variables
+        print("Loading saved meta graph...")
         saver = tf.train.import_meta_graph("{}.meta".format(checkpoint_file))
+        print("Restoring variables...")
         saver.restore(sess, checkpoint_file)
+        print("Finished TF graph load.")
 
         # Get the placeholders from the graph by name
-        input_x = graph.get_operation_by_name("input_x").outputs[0]
+        # If you forget to name your input, try 'Placeholder', or 'Placeholder_1'.
+        # input_x = graph.get_operation_by_name("Placeholder").outputs[0]
+        # input_x = graph.get_operation_by_name("input_x").outputs[0]
         # input_y = graph.get_operation_by_name("input_y").outputs[0]
+
+        input_x = graph.get_operation_by_name("input_batch_x").outputs[0]
+        input_y = graph.get_operation_by_name("input_batch_x_1").outputs[0]
+
+        # input_y = graph.get_operation_by_name("Placeholder_1").outputs[0]
+        # input_y = graph.get_operation_by_name("input_batch_x_1").outputs[0]
         dropout_keep_prob = graph.get_operation_by_name("dropout_keep_prob").outputs[0]
 
         # Tensors we want to evaluate
-        predictions = graph.get_operation_by_name("output/predictions").outputs[0]
+        predictions = graph.get_operation_by_name("output/Softmax").outputs[0]
+        # predictions = graph.get_operation_by_name("output/predictions").outputs[0]
 
         # Collect the predictions here
         all_predictions = []
-        id = 1
-        for row in validation_data:
-            if id % 100 == 0:
-                print("done tweets: {:d}".format(id))
-            prediction = sess.run(predictions, {input_x: [row], dropout_keep_prob: 1.0})[0]
-            all_predictions.append((id, prediction))
-            id += 1
+        print("Computing predictions...")
+        for (id, row) in enumerate(validation_data):
+            if (id + 1) % 1000 == 0:
+                print("Done tweets: {0}/{1}".format(id + 1, len(validation_data)))
+
+            # TODO(andrei): Why does running 'predictions' return TWO identical rows?
+            prediction = sess.run(predictions, {
+                input_x: [row],
+                dropout_keep_prob: 1.0
+            })[0]
+            all_predictions.append((id + 1, prediction))
 
         print("Prediction done")
         print("Writing predictions to file...")
         submission = open(filename, 'w+')
         print('Id,Prediction', file=submission)
+        correct = 0
+
+        # Ensure that IDs are from 1 to 10000, NOT from 0. Otherwise Kaggle
+        # rejects the submission.
         for id, pred in all_predictions:
             if pred[0] >= 0.5:
                 print("%d,-1" % id,file=submission)

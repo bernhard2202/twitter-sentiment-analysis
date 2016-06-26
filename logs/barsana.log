@@ -21,6 +21,16 @@ Fixed w2v bug (18 Jun)
         - used pre-computed embeddings by design
         - increased max sentence length to 35 instead of 30
 
+ * Nikos's preprocessing (es = 300) + LSTM
+   * 1st (killed off) Euler run
+        - 24h for 6 epochs. Still far from converged, it seems.
+        - Added dropout just to be sure.
+        - Dev score:    <see TensorBoard; slightly higher than best CNN>
+        - Kaggle score: PENDING
+   * 2nd Euler run
+        - running; max 48h
+        - Kaggle score after 68k steps: 0.86920
+
 ## Experiments to do
  * Same as above, but with pretrained GloVe
  * Same as above, but with local GloVe
