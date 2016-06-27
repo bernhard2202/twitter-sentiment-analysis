@@ -61,7 +61,7 @@ validation_data_check_2 = np.load('data/preprocessing/full-trainY.npy')
 # by recomputing train error.
 
 # How many data points to evaluate.
-evlim = 50
+evlim = 20000
 
 validation_data, validation_data_check, validation_data_2, validation_data_check_2 = shuffle(validation_data, validation_data_check, validation_data_2, validation_data_check_2)
 validation_data = validation_data[:evlim]
