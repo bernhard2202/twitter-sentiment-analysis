@@ -137,8 +137,6 @@ print("Train/Dev split: {:d}/{:d}".format(len(y_train), len(y_dev)))
 
 # This splits the test data into chunks to lower memory pressure during
 # validation.
-# TODO(andrei): On Euler we normally have ~40Gb of RAM. Could we increase the
-# size of each split? (i.e. decrease 'test_split' further)
 test_split = FLAGS.test_split
 x_dev = np.array_split(x_dev, test_split)
 y_dev = np.array_split(y_dev, test_split)
