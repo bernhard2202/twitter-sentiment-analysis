@@ -26,10 +26,14 @@ Fixed w2v bug (18 Jun)
         - 24h for 6 epochs. Still far from converged, it seems.
         - Added dropout just to be sure.
         - Dev score:    <see TensorBoard; slightly higher than best CNN>
-        - Kaggle score: PENDING
+        - Kaggle score: <data was bad>
    * 2nd Euler run
         - running; max 48h
         - Kaggle score after 68k steps: 0.86920
+
+ * Nikos's preprocessing:
+   * LOW: 4, HI: 20, HTFB: 10, 96k steps: 0.86680
+   * LOW: 4, HI: 20, HTFB: 10, 68k steps: 0.86540
 
 ## Experiments to do
  * Same as above, but with pretrained GloVe
