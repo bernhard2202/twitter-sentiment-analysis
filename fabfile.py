@@ -16,6 +16,8 @@ Example:
     `fab euler`        rsync data to Euler and start a training session.
 """
 
+# TODO(andrei): '--progress' flag for rsync or pipe through 'pv'.
+
 from __future__ import with_statement
 
 import os
