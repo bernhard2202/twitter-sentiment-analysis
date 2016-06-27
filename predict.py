@@ -12,13 +12,22 @@ tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on 
 tf.flags.DEFINE_integer("batch_size", 1, "Batch Size (default: 1)")
 
 # Example: './data/runs/euler/local-w2v-275d-1466050948/checkpoints/model-96690'
-tf.flags.DEFINE_string("checkpoint_file", None, "Checkpoint file from the"
-                                                " training run.")
-tf.flags.DEFINE_string("validation_data_fname",
-                       "./data/preprocessing/validateX.npy",
-                       "The numpy dump of the validation data for Kaggle."
-                       " Should ideally be preprocessed the same as the"
-                       " training data.")
+tf.flags.DEFINE_string("checkpoint_file", None, "Checkpoint file from the training run.")
+tf.flags.DEFINE_string(
+    "validation_data_fname",
+    "./data/preprocessing/validateX.npy",
+    "The numpy dump of the validation data for Kaggle. Should ideally be"
+    " preprocessed the same way as the training data.")
+tf.flags.DEFINE_string(
+    "input_x_name",
+    "input_x",
+    "The graph node name of the input data. Hint: if you forget to name it,"
+    " it's probably called 'Placeholder'.")
+tf.flags.DEFINE_string(
+    "predictions_name",
+    "output/predictions",
+    "The graph node name of the prediction computation. Hint: if you forget to"
+    " name it, it's probably called 'Softmax' or 'output/Softmax'.")
 FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
 
@@ -54,21 +63,11 @@ with graph.as_default():
         print("Finished TF graph load.")
 
         # Get the placeholders from the graph by name
-        # If you forget to name your input, try 'Placeholder', or 'Placeholder_1'.
-        # input_x = graph.get_operation_by_name("Placeholder").outputs[0]
-        # input_x = graph.get_operation_by_name("input_x").outputs[0]
-        # input_y = graph.get_operation_by_name("input_y").outputs[0]
-
-        input_x = graph.get_operation_by_name("input_batch_x").outputs[0]
-        input_y = graph.get_operation_by_name("input_batch_x_1").outputs[0]
-
-        # input_y = graph.get_operation_by_name("Placeholder_1").outputs[0]
-        # input_y = graph.get_operation_by_name("input_batch_x_1").outputs[0]
+        input_x = graph.get_operation_by_name(FLAGS.input_x_name).outputs[0]
         dropout_keep_prob = graph.get_operation_by_name("dropout_keep_prob").outputs[0]
 
         # Tensors we want to evaluate
-        predictions = graph.get_operation_by_name("output/Softmax").outputs[0]
-        # predictions = graph.get_operation_by_name("output/predictions").outputs[0]
+        predictions = graph.get_operation_by_name(FLAGS.predictions_name).outputs[0]
 
         # Collect the predictions here
         all_predictions = []
@@ -77,14 +76,15 @@ with graph.as_default():
             if (id + 1) % 1000 == 0:
                 print("Done tweets: {0}/{1}".format(id + 1, len(validation_data)))
 
-            # TODO(andrei): Why does running 'predictions' return TWO identical rows?
+            # TODO(andrei): Why does running 'predictions' return TWO identical
+            # rows? (See the necessary '[0]'.)
             prediction = sess.run(predictions, {
                 input_x: [row],
                 dropout_keep_prob: 1.0
             })[0]
             all_predictions.append((id + 1, prediction))
 
-        print("Prediction done")
+        print("Prediction done.")
         print("Writing predictions to file...")
         submission = open(filename, 'w+')
         print('Id,Prediction', file=submission)
