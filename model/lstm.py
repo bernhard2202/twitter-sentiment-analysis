@@ -56,7 +56,7 @@ class TextLSTM(object):
         # Since otherwise there's no way to feed information into the LSTM cell.
         embedded_words = tf.transpose(embedded_words, [1, 0, 2])
         embedded_words = tf.reshape(embedded_words, [-1, embedding_size])
-        # Note: 'tf.split' outputs a **PYTHON** list.
+        # Note: 'tf.split' outputs a **Python** list.
         embedded_words = tf.split(0, sequence_length, embedded_words)
 
         # Layer 2: LSTM cell
@@ -68,36 +68,22 @@ class TextLSTM(object):
             print("Using deep {0}-layer LSTM with first layer size {1}"
                   " (embedding size) and hidden layer size {2}."
                   .format(layer_count, embedding_size, hidden_size))
-            # Note: 'input_size' is deprecated in TF 0.9, but required in TF 0.8
-            # since our cells aren't all the same size.
             print("First cell {0}->{1}".format(embedding_size, embedding_size))
-            first_cell = rnn_cell.LSTMCell(num_units=embedding_size,
-                                           input_size=embedding_size,
-                                           forget_bias=1.0,
-                                           use_peepholes=lstm_use_peepholes)
-            first_cell = rnn_cell.DropoutWrapper(
-                first_cell,
-                input_keep_prob=self.dropout_keep_prob,
-                output_keep_prob=self.dropout_keep_prob)
+            first_cell = TextLSTM._cell(embedding_size,
+                                        embedding_size,
+                                        lstm_use_peepholes,
+                                        self.dropout_keep_prob)
             print("Second cell {0}->{1}".format(embedding_size, hidden_size))
-            # Have one or more 'hidden_size' cells.
-            second_cell = rnn_cell.LSTMCell(num_units=hidden_size,
-                                            input_size=embedding_size,
-                                            forget_bias=1.0,
-                                            use_peepholes=lstm_use_peepholes)
-            second_cell = rnn_cell.DropoutWrapper(
-                second_cell,
-                input_keep_prob=self.dropout_keep_prob,
-                output_keep_prob=self.dropout_keep_prob)
+            second_cell = TextLSTM._cell(embedding_size,
+                                         hidden_size,
+                                         lstm_use_peepholes,
+                                         self.dropout_keep_prob)
             print("Third cell+ {0}->{1} (if applicable)".format(hidden_size,
                                                                 hidden_size))
-            third_plus = rnn_cell.LSTMCell(num_units=embedding_size,
-                                           input_size=embedding_size,
-                                           forget_bias=1.0)
-            third_plus = rnn_cell.DropoutWrapper(
-                third_plus,
-                input_keep_prob=self.dropout_keep_prob,
-                output_keep_prob=self.dropout_keep_prob)
+            third_plus = TextLSTM._cell(hidden_size,
+                                        hidden_size,
+                                        lstm_use_peepholes,
+                                        self.dropout_keep_prob)
             deep_cells = [third_plus] * (layer_count - 2)
             lstm_cells = rnn_cell.MultiRNNCell([first_cell, second_cell] +
                                                deep_cells)
@@ -109,26 +95,28 @@ class TextLSTM(object):
                                            forget_bias=1.0,
                                            use_peepholes=lstm_use_peepholes)
 
-        # TODO(andrei): The example code on which this is based may be wrong. Or
-        # at least I (andrei) don't fully get the funneling (reshaping) part. It
-        # does get 99+% on MNIST-test, but how can't batches end up containing
-        # both positive and negative labels? Don't we risk mixing things up and
-        # having + tweets leak into - ones, and vice-versa by doing this tensor
-        # reshaping?
+        # Q: Can't batches end up containing both positive and negative labels?
+        #    Can the LSTM batch training deal with this?
+        #
+        # A: Yes. Each batch feeds each sentence into the LSTM, incurs the loss,
+        #    and backpropagates the error separately. Each example in a bath
+        #    is independent. Note that as opposed to language models, for
+        #    instance, where we incur a loss for all outputs, in this case we
+        #    only care about the final output of the RNN, since it doesn't make
+        #    sense to classify incomplete tweets.
 
-        outputs, _ = rnn(lstm_cells, inputs=embedded_words, dtype=tf.float32)
-        print("RNN output count:")
-        print(len(outputs))
-        print("Inputs length:")
-        print(len(embedded_words))
+        outputs, _states = rnn(lstm_cells,
+                               inputs=embedded_words,
+                               dtype=tf.float32)
 
         # Layer 3: Final Softmax
         out_weight = tf.Variable(tf.random_normal([hidden_size, n_classes]))
         out_bias = tf.Variable(tf.random_normal([n_classes]))
 
         with tf.name_scope("output"):
-            self.scores = tf.nn.xw_plus_b(outputs[-1], out_weight, out_bias,
-                                          name="scores")
+            lstm_final_output = outputs[-1]
+            self.scores = tf.nn.xw_plus_b(lstm_final_output, out_weight,
+                                          out_bias, name="scores")
             self.predictions = tf.nn.softmax(self.scores, name="predictions")
 
         with tf.name_scope("loss"):
@@ -141,6 +129,28 @@ class TextLSTM(object):
                                          tf.argmax(self.input_y, 1))
             self.accuracy = tf.reduce_mean(tf.cast(self.correct_pred, "float"),
                                            name="accuracy")
+
+    @staticmethod
+    def _cell(
+        input_size: int,
+        num_units: int,
+        use_peepholes: bool,
+        dropout_keep_prob: int
+    ) -> rnn_cell.LSTMCell:
+        """Helper for building an LSTM cell."""
+
+        # Note: 'input_size' is deprecated in TF 0.9, but required in TF 0.8
+        # since our cells aren't all the same size.
+        cell = rnn_cell.LSTMCell(
+            num_units=num_units,
+            input_size=input_size,
+            forget_bias=1.0,
+            use_peepholes=use_peepholes)
+        dropout_cell = rnn_cell.DropoutWrapper(
+            cell,
+            input_keep_prob=dropout_keep_prob,
+            output_keep_prob=dropout_keep_prob)
+        return dropout_cell
 
 
 def solve(x_data, y_data, vocabulary, embeddings):
