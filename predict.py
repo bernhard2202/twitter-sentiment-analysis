@@ -88,7 +88,6 @@ with graph.as_default():
         print("Writing predictions to file...")
         submission = open(filename, 'w+')
         print('Id,Prediction', file=submission)
-        correct = 0
 
         # Ensure that IDs are from 1 to 10000, NOT from 0. Otherwise Kaggle
         # rejects the submission.

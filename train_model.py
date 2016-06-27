@@ -139,9 +139,9 @@ print("Train/Dev split: {:d}/{:d}".format(len(y_train), len(y_dev)))
 # validation.
 # TODO(andrei): On Euler we normally have ~40Gb of RAM. Could we increase the
 # size of each split? (i.e. decrease 'test_split' further)
-test_split = 4
-x_dev = np.split(x_dev, test_split)
-y_dev = np.split(y_dev, test_split)
+test_split = FLAGS.test_split
+x_dev = np.array_split(x_dev, test_split)
+y_dev = np.array_split(y_dev, test_split)
 
 # ==================================================
 # Training
@@ -187,14 +187,14 @@ with tf.Graph().as_default():
         if FLAGS.clip_gradients:
             print("Will clip gradients |.| < {0}"
                   .format(FLAGS.clip_gradient_value))
-            # Note that this is much less fancy than it looks. We don't do L2
-            # regularization, we don't compute the L2 norm of the gradient; we
-            # simply truncate its raw value.
 
             if not FLAGS.lstm:
                 raise ValueError("Gradient clipping should probably not be"
                                  " used with CNNs.")
 
+            # Note that this is much less fancy than it looks. We don't do L2
+            # regularization, we don't compute the L2 norm of the gradient; we
+            # simply truncate its raw value.
             def tf_clip(gradient):
                 if gradient is None:
                     # Workaround for a particular case where a variable's
