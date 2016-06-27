@@ -125,15 +125,15 @@ def _run_euler(run_label):
                       ' -B -N'
                       ' LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/ext/lib" "$HOME"/ext/lib/ld-2.23.so "$HOME"/.venv/bin/python3'
                       # TODO(andrei): Pass these parameters as arguments to fabric.
-                      ' ../train_model.py --num_epochs 11 --nolstm'
+                      ' ../train_model.py --num_epochs 12 --lstm'
                       #' --filter_sizes "3,4,5,7"'
                       ' --data_root ../data'
-                      # ' --clip_gradients'
-                      #' --lstm_hidden_size 256 --lstm_hidden_layers 2'
+                      ' --clip_gradients'
+                      ' --lstm_hidden_size 256 --lstm_hidden_layers 2'
                       # TODO(andrei): RNNs clip gradients. Try a larger learning rate!
                       # LSTM examples using ADAM seem OK with 0.001.
                       ' --learning_rate 0.0001'
-                      # ' --dropout_keep_prob 0.75'
+                      ' --dropout_keep_prob 0.5'
                       ' --batch_size 256 --evaluate_every 2500'
                       ' --checkpoint_every 8500 --output_every 500'
                       ' --label "' + run_label + '"')
