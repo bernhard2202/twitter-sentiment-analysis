@@ -1,13 +1,7 @@
 """LSTM (Long Short-Term Memory) NN for tweet sentiment analysis."""
 
-import os
-import pickle
-
-import numpy as np
 import tensorflow as tf
 from tensorflow.python.ops.nn import rnn_cell, rnn
-
-from .util import batch_iter
 
 
 class TextLSTM(object):
@@ -134,11 +128,10 @@ class TextLSTM(object):
 
     @staticmethod
     def _cell(
-        input_size: int,
-        num_units: int,
-        use_peepholes: bool,
-        dropout_keep_prob: int
-    ) -> rnn_cell.LSTMCell:
+        input_size,
+        num_units,
+        use_peepholes,
+        dropout_keep_prob):
         """Helper for building an LSTM cell."""
 
         # Note: 'input_size' is deprecated in TF 0.9, but required in TF 0.8

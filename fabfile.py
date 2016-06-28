@@ -89,7 +89,8 @@ def _run_aws(run_label: str) -> None:
         ts = '$(date +%Y%m%dT%H%M%S)'
         tf_command = ('t=' + ts + ' && mkdir $t && cd $t &&'
                       'python ' + _run_tf(run_label))
-        _in_screen(tf_command, shell_escape=False, shell=False)
+        _in_screen(tf_command, 'tensorflow_screen', shell_escape=False,
+                   shell=False)
 
 
 def _run_euler(run_label):
@@ -212,13 +213,13 @@ def tensorboard():
 
     with cd('deploy'):
         tb_cmd = 'tensorboard --logdir data/runs'
-        _in_screen(tb_cmd)
+        _in_screen(tb_cmd, 'tensorboard_screen')
 
 
-def _in_screen(cmd, **kw):
+def _in_screen(cmd, screen_name, **kw):
     # The final 'exec bash' prevents the screen from terminating when the
     # command exits.
-    screen = "screen -dmS tensorboard_screen bash -c '{} ; exec bash'".format(cmd)
+    screen = "screen -dmS {} bash -c '{} ; exec bash'".format(screen_name, cmd)
     print(screen)
     run(screen, pty=False, **kw)
 

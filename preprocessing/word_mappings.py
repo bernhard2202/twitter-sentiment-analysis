@@ -21,15 +21,16 @@ MAPPINGS_FILE_NAME = "../data/preprocessing/mappings/mappings.pkl"
 MAPPINGS_FOLDER = "../data/preprocessing/mappings/"
 
 # Original values:
-# HIGH_FREQUENCY = 10
-# LOW_FREQUENCY = 4    # TODO experiment with different values. i believe we should increase it
-# HASH_TAG_FREQ_BOUND = 80
-# MIN_SPELL_CORRECTION_LENGTH = 5
-
-HIGH_FREQUENCY = 20
+HIGH_FREQUENCY = 10
 LOW_FREQUENCY = 4    # TODO experiment with different values. i believe we should increase it
-HASH_TAG_FREQ_BOUND = 10
+HASH_TAG_FREQ_BOUND = 80
 MIN_SPELL_CORRECTION_LENGTH = 5
+
+# Optimal values on Kaggle, based on Nikos's experiments.
+# HIGH_FREQUENCY = 20
+# LOW_FREQUENCY = 4    # TODO experiment with different values. i believe we should increase it
+# HASH_TAG_FREQ_BOUND = 10
+# MIN_SPELL_CORRECTION_LENGTH = 5
 
 if not os.path.exists(MAPPINGS_FOLDER):
     os.makedirs(MAPPINGS_FOLDER)
