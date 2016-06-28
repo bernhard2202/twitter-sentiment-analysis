@@ -67,11 +67,13 @@ tf.flags.DEFINE_string("label", "", "Additional label to append to experiment"
 
 # File paths
 tf.flags.DEFINE_string("data_root", "./data", "Location of data folder.")
-tf.flags.DEFINE_string("data_prefix", "full", "Prefix of preprocessed files (e.g. trainX, trainY, embeddings, etc.)."
-                                              " Useful for differentiating between inputs containing *all* training"
-                                              " data, and ones computed only over a subset.")
-tf.flags.DEFINE_boolean("lstm", False, "Whether to use the LSTM model. If set"
-                                       " to False, uses the CNN.")
+tf.flags.DEFINE_string("data_prefix", "full",
+                       "Prefix of preprocessed files (e.g. trainX, trainY, embeddings, etc.)."
+                       " Useful for differentiating between inputs containing *all* training"
+                       " data, and ones computed only over a subset.")
+tf.flags.DEFINE_boolean("lstm", False,
+                        "Whether to use the LSTM model. If set to False, uses"
+                        " the CNN. (default: False)")
 FLAGS = tf.flags.FLAGS
 
 

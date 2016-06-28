@@ -28,6 +28,8 @@ class TextLSTM(object):
     TODO(andrei): Also try a bidirectional RNN.
     TODO(andrei): Experiment with deeper LSTM.
     TODO(andrei): Consider using 'EmbeddingWrapper'.
+    TODO(andrei): NEVER use 'tf.Variable' directly!
+    TODO(andrei): Use 'variable_scope' instead of 'name_scope'.
     """
 
     def __init__(self, sequence_length, vocab_size, embedding_size, hidden_size,
