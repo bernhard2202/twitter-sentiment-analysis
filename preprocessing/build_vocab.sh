@@ -54,7 +54,7 @@ python3 ./word_mappings.py
 echo 'Finished vocabulary processing.'
 
 # Old version of the file.
-# TODO(bernhard: remove once preprocessing is fixed.
+# TODO(bernhard): remove once preprocessing is fixed.
 #
 # Note that this script uses GNU-style sed. On Mac OS, you are required to first
 #    brew install gnu-sed --with-default-names

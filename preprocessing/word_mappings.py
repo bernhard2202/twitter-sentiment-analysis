@@ -19,15 +19,23 @@ VOCAB_FILE_NAME = "../data/preprocessing/vocab_cut.txt"
 WORD2VEC_FILE_NAME = "../data/word2vec/GoogleNews-vectors-negative300.bin"
 MAPPINGS_FILE_NAME = "../data/preprocessing/mappings/mappings.pkl"
 MAPPINGS_FOLDER = "../data/preprocessing/mappings/"
-HIGH_FREQUENCY = 10
+
+# Original values:
+# HIGH_FREQUENCY = 10
+# LOW_FREQUENCY = 4    # TODO experiment with different values. i believe we should increase it
+# HASH_TAG_FREQ_BOUND = 80
+# MIN_SPELL_CORRECTION_LENGTH = 5
+
+HIGH_FREQUENCY = 20
 LOW_FREQUENCY = 4    # TODO experiment with different values. i believe we should increase it
-HASH_TAG_FREQ_BOUND = 80
+HASH_TAG_FREQ_BOUND = 10
 MIN_SPELL_CORRECTION_LENGTH = 5
 
 if not os.path.exists(MAPPINGS_FOLDER):
     os.makedirs(MAPPINGS_FOLDER)
 
-model = gensim.models.word2vec.Word2Vec.load_word2vec_format(WORD2VEC_FILE_NAME, binary=True)
+model = gensim.models.word2vec.Word2Vec.load_word2vec_format(WORD2VEC_FILE_NAME,
+                                                             binary=True)
 freq_dict = model.vocab
 mappings = dict()
 pretrained = set()

@@ -23,7 +23,7 @@ with open(MAPPINGS_FOLDER+"mappings.pkl", 'rb') as f:
     (mappings, pretrained, extra_words) = pickle.load(f)
 
 
-def vocab_and_embeddings():
+def vocab_and_embeddings(prefix):
     """
     pickle vocabulary
     """
@@ -68,13 +68,13 @@ def vocab_and_embeddings():
     print("len(extra_words)+len(pretrained)+1= {}".format(len(extra_words)+len(pretrained)+1))
     #assert len(vocab) == (len(extra_words) + len(pretrained) + 1) == len(vocab_inv)
 
-    with open('../data/preprocessing/full-vocab.pkl', 'wb') as f:
+    with open('../data/preprocessing/{0}-vocab.pkl'.format(prefix), 'wb') as f:
         pickle.dump(vocab, f, protocol=2)
-    with open('../data/preprocessing/full-vocab-inv.pkl', 'wb') as f:
+    with open('../data/preprocessing/{0}-vocab-inv.pkl'.format(prefix), 'wb') as f:
         pickle.dump(vocab_inv, f, protocol=2)
     print("Vocabulary pickled.")
 
-    np.save('../data/preprocessing/full-embeddings', X)
+    np.save('../data/preprocessing/{0}-embeddings'.format(prefix), X)
     print("Embeddings pickled.")
     print("Used {} pre-trained word2vec vectors and {} new random vectors.".format(len(pretrained), len(extra_words)+1))
 
@@ -232,28 +232,34 @@ def main(argv):
     train_pos_file = POS_FILE_NAME
     train_neg_file = NEG_FILE_NAME
     train_size = SMALL_TRAIN_SIZE
+    prefix = 'subset'
+
     try:
         opts, args = getopt.getopt(argv, "[fl:]", ["full", "sentence-length="])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
     for opt, arg in opts:
+        # TODO(andrei): Warn when not using full subset!
         if opt in ("-f", "--full"):
             train_pos_file = FULL_POS_FILE_NAME
             train_neg_file = FULL_NEG_FILE_NAME
             train_size = FULL_TRAIN_SIZE
+            prefix = 'full'
             print("train in Full data")
         if opt in ("-s", "--sentence-length"):
             max_sentence_length = int(arg)
 
     print("sentence-length={}".format(max_sentence_length))
     print('Pickle vocabulary and build word embeddings (this can take some time)..')
-    vocab = vocab_and_embeddings()
+    vocab = vocab_and_embeddings(prefix)
 
     print('prepare training data..')
     X, Y = prepare_data(train_pos_file, train_neg_file, train_size, vocab, max_sentence_length)
-    np.save('../data/preprocessing/full-trainX', X)
-    np.save('../data/preprocessing/full-trainY', Y)
+
+    print("Will save with prefix: {0}".format(prefix))
+    np.save('../data/preprocessing/{0}-trainX'.format(prefix), X)
+    np.save('../data/preprocessing/{0}-trainY'.format(prefix), Y)
 
     print('prepare validation data..')
     validate_x = prepare_valid_data(max_sentence_length, vocab)

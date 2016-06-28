@@ -447,6 +447,8 @@ def prepare_valid_data(max_sentence_length, vocab, mappings):
 
 
 def main():
+    raise RuntimeError("Please use 'preprocessv2' instead, since this script"
+                       " is buggy.")
     max_sentence_length = FLAGS.sentence_length
 
     if FLAGS.full:
