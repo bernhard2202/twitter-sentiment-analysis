@@ -71,15 +71,15 @@ def euler(sub='run', label='euler'):
 
 
 @hosts('aws-cil-gpu')
-def aws(sub='run'):
+def aws(sub='run', label='aws'):
     if sub == 'run':
         # TODO(andrei): Ideally you'd want to unify this with '_run_euler'.
-        _run_aws()
+        _run_aws(label)
     else:
         raise ValueError("Unknown AWS action: {0}".format(sub))
 
 
-def _run_aws():
+def _run_aws(run_label: str) -> None:
     print("Will train TF model remotely on an AWS GPU instance.")
     print("Yes, this will cost you real $$$.")
 
@@ -88,12 +88,7 @@ def _run_aws():
     with cd('deploy'):
         ts = '$(date +%Y%m%dT%H%M%S)'
         tf_command = ('t=' + ts + ' && mkdir $t && cd $t &&'
-                      'python ../train_model.py --num_epochs 15'
-                      ' --filter_sizes "3,4,5,7" '
-                      ' --data_root ../data'
-                      ' --learning_rate 0.0001'
-                      ' --batch_size 256 --evaluate_every 1000'
-                      ' --checkpoint_every 7500 --output_every 500')
+                      'python ' + _run_tf(run_label))
         _in_screen(tf_command, shell_escape=False, shell=False)
 
 
@@ -121,25 +116,35 @@ def _run_euler(run_label):
         tf_command = ('t=' + ts + ' && mkdir $t && cd $t &&'
                       ' source ../euler_voodoo.sh &&'
                       # Use many cores and run for up to two hours.
-                      ' bsub -n 48 -W 24:00'
+                      ' bsub -n 48 -W 72:00'
                       # These flags tell 'bsub' to send an email to the
                       # submitter when the job starts, and when it finishes.
                       ' -B -N'
                       ' LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/ext/lib" "$HOME"/ext/lib/ld-2.23.so "$HOME"/.venv/bin/python3'
-                      # TODO(andrei): Pass these parameters as arguments to fabric.
-                      ' ../train_model.py --num_epochs 12 --lstm'
-                      #' --filter_sizes "3,4,5,7"'
-                      ' --data_root ../data'
-                      ' --clip_gradients'
-                      ' --lstm_hidden_size 256 --lstm_hidden_layers 2'
-                      # TODO(andrei): RNNs clip gradients. Try a larger learning rate!
-                      # LSTM examples using ADAM seem OK with 0.001.
-                      ' --learning_rate 0.0001'
-                      ' --dropout_keep_prob 0.5'
-                      ' --batch_size 256 --evaluate_every 2500'
-                      ' --checkpoint_every 8500 --output_every 500'
-                      ' --label "' + run_label + '"')
+                      + _run_tf(run_label))
         run(tf_command, shell_escape=False, shell=False)
+
+
+def _run_tf(run_label):
+    """This is the TensorFlow command for the training pipeline.
+
+    It is called inside a screen right away when running on AWS, and submitted
+    to LFS using 'bsub' on Euler.
+    """
+    # TODO(andrei): Pass these all these parameters as arguments to fabric.
+    return (' ../train_model.py --num_epochs 12 --lstm'
+            #' --filter_sizes "3,4,5,7"'
+            ' --data_root ../data'
+            ' --clip_gradients'
+            ' --lstm_hidden_size 128 --lstm_hidden_layers 1'
+            # TODO(andrei): RNNs clip gradients. Try a larger learning rate!
+            # LSTM examples using ADAM seem OK with 0.001.
+            ' --learning_rate 0.0001'
+            ' --dropout_keep_prob 0.5'
+            ' --batch_size 256 --evaluate_every 2500'
+            ' --checkpoint_every 8500 --output_every 500'
+            ' --label "' + run_label + '"')
+
 
 
 def gce():
