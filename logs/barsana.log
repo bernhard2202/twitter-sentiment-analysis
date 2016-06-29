@@ -31,9 +31,15 @@ Fixed w2v bug (18 Jun)
         - running; max 48h
         - Kaggle score after 68k steps: 0.86920
 
- * Nikos's preprocessing:
+ * CNN + Nikos's preprocessing:
    * LOW: 4, HI: 20, HTFB: 10, 96k steps: 0.86680
    * LOW: 4, HI: 20, HTFB: 10, 68k steps: 0.86540
+
+ * LSTM + Nikos's preprocessing (optimal params, as above):
+   * <PENDING>; old one was killed after 24h :(
+
+ * Deep LSTM + Nikos's preprocessing (no optimal params):
+   *
 
 ## Experiments to do
  * Same as above, but with pretrained GloVe

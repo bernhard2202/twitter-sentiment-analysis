@@ -12,8 +12,10 @@ Please install 'Fabric3' to use this, NOT the vanilla 'fabric'.
 Make sure that 'env.hosts' points to wherever you want to train your model, and
 that the remote host has tensorflow installed.
 
-Example:
+Examples:
     `fab euler`        rsync data to Euler and start a training session.
+    `fab aws`          same but on AWS
+    `fab aws:tb`       to launch TensorBoard on AWS
 """
 
 from __future__ import with_statement
@@ -42,6 +44,9 @@ def euler(sub='run', label='euler'):
     Submits the pipeline to Euler's batch job system.
 
     Arguments:
+        sub: What action to perform. Can be 'run' for running the pipeline,
+             'status' for seeing the job status on Euler, or 'fetch' to download
+             the experiment results (experimental feature).
         label: An informative label for the job. MUST be a valid file name
                fragment, such as 'preprocess-v2-bob'. Does NOT get
                shell-escaped, so use special characters (e.g. spaces, $, etc.)
@@ -69,36 +74,33 @@ def euler(sub='run', label='euler'):
 
 
 @hosts('aws-cil-gpu')
-def aws(sub='run'):
+def aws(sub='run', label='aws'):
     if sub == 'run':
-        # TODO(andrei): Ideally you'd want to unify this with '_run_euler'.
-        _run_aws()
+        print("Will train TF model remotely on an AWS GPU instance.")
+        print("Yes, this will cost you real $$$.")
+        _run_commodity(label)
+    elif sub == 'tb' or sub == 'tensorboard':
+        return tb()
     else:
         raise ValueError("Unknown AWS action: {0}".format(sub))
 
 
-def _run_aws():
-    print("Will train TF model remotely on an AWS GPU instance.")
-    print("Yes, this will cost you real $$$.")
-
-    sync_data_and_code()
+def _run_commodity(run_label: str) -> None:
+    """Runs the TF pipeline on commodity hardware with no job queueing."""
+    _sync_data_and_code()
 
     with cd('deploy'):
         ts = '$(date +%Y%m%dT%H%M%S)'
         tf_command = ('t=' + ts + ' && mkdir $t && cd $t &&'
-                      'python ../train_model.py --num_epochs 15'
-                      ' --filter_sizes "3,4,5,7" '
-                      ' --data_root ../data'
-                      ' --learning_rate 0.0001'
-                      ' --batch_size 256 --evaluate_every 1000'
-                      ' --checkpoint_every 7500 --output_every 500')
-        _in_screen(tf_command, shell_escape=False, shell=False)
+                      'python ' + _run_tf(run_label))
+        _in_screen(tf_command, 'tensorflow_screen', shell_escape=False,
+                   shell=False)
 
 
 def _run_euler(run_label):
     print("Will train TF model remotely on Euler.")
     print("Euler job label: {0}".format(run_label))
-    sync_data_and_code()
+    _sync_data_and_code()
 
     # Custom Euler stuff.
     put(local_path='./remote/tensor_hello.py',
@@ -119,46 +121,52 @@ def _run_euler(run_label):
         tf_command = ('t=' + ts + ' && mkdir $t && cd $t &&'
                       ' source ../euler_voodoo.sh &&'
                       # Use many cores and run for up to two hours.
-                      ' bsub -n 48 -W 24:00'
+                      ' bsub -n 48 -W 72:00'
                       # These flags tell 'bsub' to send an email to the
                       # submitter when the job starts, and when it finishes.
                       ' -B -N'
                       ' LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/ext/lib" "$HOME"/ext/lib/ld-2.23.so "$HOME"/.venv/bin/python3'
-                      # TODO(andrei): Pass these parameters as arguments to fabric.
-                      ' ../train_model.py --num_epochs 12 --lstm'
-                      #' --filter_sizes "3,4,5,7"'
-                      ' --data_root ../data'
-                      ' --clip_gradients'
-                      ' --lstm_hidden_size 256 --lstm_hidden_layers 2'
-                      # TODO(andrei): RNNs clip gradients. Try a larger learning rate!
-                      # LSTM examples using ADAM seem OK with 0.001.
-                      ' --learning_rate 0.0001'
-                      ' --dropout_keep_prob 0.5'
-                      ' --batch_size 256 --evaluate_every 2500'
-                      ' --checkpoint_every 8500 --output_every 500'
-                      ' --label "' + run_label + '"')
+                      + _run_tf(run_label))
         run(tf_command, shell_escape=False, shell=False)
 
 
-def gce():
+def _run_tf(run_label: str) -> str:
+    """This is the TensorFlow command for the training pipeline.
+
+    It is called inside a screen right away when running on AWS, and submitted
+    to LFS using 'bsub' on Euler.
+    """
+    # TODO(andrei): Pass these all these parameters as arguments to fabric.
+    return (' ../train_model.py --num_epochs 12 --lstm'
+            #' --filter_sizes "3,4,5,7"'
+            ' --data_root ../data'
+            ' --clip_gradients'
+            ' --lstm_hidden_size 512 --lstm_hidden_layers 5'
+            # TODO(andrei): RNNs clip gradients. Try a larger learning rate!
+            # LSTM examples using ADAM seem OK with 0.001.
+            ' --learning_rate 0.0001'
+            ' --dropout_keep_prob 0.4'
+            ' --batch_size 256 --evaluate_every 1000'
+            ' --checkpoint_every 8500 --output_every 500'
+            ' --test_split 20'
+            ' --label "' + run_label + '"')
+
+
+@hosts('gce')
+def gce(sub='run', label='gce'):
     raise RuntimeError("We should probably stick to Euler and maybe AWS for the"
                        " time being.")
 
-    # TODO(andrei): Use 'screen' in case connection dies.
-
-    print("Will train TF model remotely on Google Compute Engine.")
-    sync_data_and_code()
-    print("Uploaded data and code. Starting to train.")
-
-    with cd('deploy'):
-        run('python -m train_model --num_epochs 20'
-            ' --batch_size 256 --evaluate_every 250'
-            ' --checkpoint_every 1000 --output_every 100')
-
-    _download_results('gce')
+    if sub == 'run':
+        print("Will train TF model remotely Google Compute Engine.")
+        print("Yes, this MAY cost you real $$$.")
+        _run_commodity(label)
+    else:
+        raise ValueError("Unknown AWS action: {0}".format(sub))
 
 
-def sync_data_and_code():
+def _sync_data_and_code():
+    # TODO(andrei): '--progress' flag for rsync or pipe through 'pv'.
     run('mkdir -p ~/deploy/data/preprocessing')
 
     # Ensure we have a trailing slash for rsync to work as intended.
@@ -198,21 +206,21 @@ def tb():
 def tensorboard():
     """Starts a remote tensorboard to see your pipeline's status.
 
-    TODO(andrei): Run in screen.
-
     Make sure you allow TCP on port 6006 for the remote machine!
     """
 
     with cd('deploy'):
         tb_cmd = 'tensorboard --logdir data/runs'
-        _in_screen(tb_cmd)
+        _in_screen(tb_cmd, 'tensorboard_screen')
 
 
-def _in_screen(cmd, **kw):
-    # The final 'exec bash' prevents the screen from terminating when the
-    # command exits.
-    screen = "screen -dmS tensorboard_screen bash -c '{} ; exec bash'".format(cmd)
-    print(screen)
+def _in_screen(cmd, screen_name, **kw):
+    """Runs the specified command inside a persistent screen.
+
+    The screen persists into a regular 'bash' after the command completes.
+    """
+    screen = "screen -dmS {} bash -c '{} ; exec bash'".format(screen_name, cmd)
+    print("Screen to run: [{0}]".format(screen))
     run(screen, pty=False, **kw)
 
 
