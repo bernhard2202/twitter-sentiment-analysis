@@ -26,22 +26,32 @@ default_pp = os.path.join('data', 'preprocessing')
 # Example: './data/runs/euler/local-w2v-275d-1466050948/checkpoints/model-96690'
 tf.flags.DEFINE_string("checkpoint_file", None, "Checkpoint file from the"
                                                 " training run.")
-tf.flags.DEFINE_string("second_checkpoint_file", None, "Another checkpoint"
-                                                       " file for computing"
-                                                       " avg. probabilities.")
+tf.flags.DEFINE_string(
+    "second_checkpoint_file",
+    None,
+    "Another checkpoint file for computing avg. probabilities. If this is"
+    " provided, a second config is checked and the train accuracy for this"
+    " checkpoint is also verified. Specifying this also triggers the"
+    " computation of the 'ensemble' predictions, done with probability"
+    " averaging.")
 tf.flags.DEFINE_string("validation_data_file",
                        os.path.join(default_pp, 'validateX.npy'),
                        "Data used for Kaggle prediction using ensemble, if"
                        " enabled.")
 FLAGS = tf.flags.FLAGS
 
-# How many data points to evaluate.
-evlim = 1000
-
-checkpoint_file = FLAGS.checkpoint_file
+# How many data points to evaluate out of the training data.
+# Does not affect the number of total predictions generated for Kaggle if the
+# second checkpoint file is provided.
+evlim = 10000
 
 
 class ModelConfig(object):
+    """Specifies the input files and placeholder names for a checkpoint.
+
+    Useful for checkpoints with inconsistent names trained on data preprocessed
+    in different ways.
+    """
 
     def __init__(self,
                  checkpoint_fname,
@@ -160,11 +170,13 @@ def main(_):
 
     print("Will shuffle data data and limit it to {0} points.".format(evlim))
 
+    # These configurations need to be adjusted according to your local
+    # preprocessed files. This is more effective than having to set 10+ flags.
     config_A = ModelConfig(
         FLAGS.checkpoint_file,
-        trainx_fname='/tmp/cil/full-trainX.npy',
-        trainy_fname='/tmp/cil/full-trainY.npy',
-        valid_fname='/tmp/cil/validateX.npy',
+        trainx_fname='data/preprocessing-old-lstm/full-trainX.npy',
+        trainy_fname='data/preprocessing-old-lstm/full-trainY.npy',
+        valid_fname='data/preprocessing-old-lstm/validateX.npy',
         input_x_name='input_batch_x',
         input_y_name='input_batch_x_1',
         predictions_name='output/Softmax',
@@ -173,8 +185,8 @@ def main(_):
     acc_A, preds_A = evaluate(config_A)
     print("Accuracy A using clean mode: {0}".format(acc_A))
 
-    if FLAGS.second_checkpoint_file:
-        config_B = ModelConfig(FLAGS.second_checkpoint_file)
+    if second_cp is not None:
+        config_B = ModelConfig(second_cp)
         acc_B, preds_B = evaluate(config_B)
         print("Accuracy B using clean mode: {0}".format(acc_B))
 
