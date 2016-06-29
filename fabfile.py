@@ -12,11 +12,11 @@ Please install 'Fabric3' to use this, NOT the vanilla 'fabric'.
 Make sure that 'env.hosts' points to wherever you want to train your model, and
 that the remote host has tensorflow installed.
 
-Example:
+Examples:
     `fab euler`        rsync data to Euler and start a training session.
+    `fab aws`          same but on AWS
+    `fab aws:tb`       to launch TensorBoard on AWS
 """
-
-# TODO(andrei): '--progress' flag for rsync or pipe through 'pv'.
 
 from __future__ import with_statement
 
@@ -44,6 +44,9 @@ def euler(sub='run', label='euler'):
     Submits the pipeline to Euler's batch job system.
 
     Arguments:
+        sub: What action to perform. Can be 'run' for running the pipeline,
+             'status' for seeing the job status on Euler, or 'fetch' to download
+             the experiment results (experimental feature).
         label: An informative label for the job. MUST be a valid file name
                fragment, such as 'preprocess-v2-bob'. Does NOT get
                shell-escaped, so use special characters (e.g. spaces, $, etc.)
@@ -73,17 +76,18 @@ def euler(sub='run', label='euler'):
 @hosts('aws-cil-gpu')
 def aws(sub='run', label='aws'):
     if sub == 'run':
-        # TODO(andrei): Ideally you'd want to unify this with '_run_euler'.
-        _run_aws(label)
+        print("Will train TF model remotely on an AWS GPU instance.")
+        print("Yes, this will cost you real $$$.")
+        _run_commodity(label)
+    elif sub == 'tb' or sub == 'tensorboard':
+        return tb()
     else:
         raise ValueError("Unknown AWS action: {0}".format(sub))
 
 
-def _run_aws(run_label: str) -> None:
-    print("Will train TF model remotely on an AWS GPU instance.")
-    print("Yes, this will cost you real $$$.")
-
-    sync_data_and_code()
+def _run_commodity(run_label: str) -> None:
+    """Runs the TF pipeline on commodity hardware with no job queueing."""
+    _sync_data_and_code()
 
     with cd('deploy'):
         ts = '$(date +%Y%m%dT%H%M%S)'
@@ -96,7 +100,7 @@ def _run_aws(run_label: str) -> None:
 def _run_euler(run_label):
     print("Will train TF model remotely on Euler.")
     print("Euler job label: {0}".format(run_label))
-    sync_data_and_code()
+    _sync_data_and_code()
 
     # Custom Euler stuff.
     put(local_path='./remote/tensor_hello.py',
@@ -126,7 +130,7 @@ def _run_euler(run_label):
         run(tf_command, shell_escape=False, shell=False)
 
 
-def _run_tf(run_label):
+def _run_tf(run_label: str) -> str:
     """This is the TensorFlow command for the training pipeline.
 
     It is called inside a screen right away when running on AWS, and submitted
@@ -148,26 +152,21 @@ def _run_tf(run_label):
             ' --label "' + run_label + '"')
 
 
-
-def gce():
+@hosts('gce')
+def gce(sub='run', label='gce'):
     raise RuntimeError("We should probably stick to Euler and maybe AWS for the"
                        " time being.")
 
-    # TODO(andrei): Use 'screen' in case connection dies.
-
-    print("Will train TF model remotely on Google Compute Engine.")
-    sync_data_and_code()
-    print("Uploaded data and code. Starting to train.")
-
-    with cd('deploy'):
-        run('python -m train_model --num_epochs 20'
-            ' --batch_size 256 --evaluate_every 250'
-            ' --checkpoint_every 1000 --output_every 100')
-
-    _download_results('gce')
+    if sub == 'run':
+        print("Will train TF model remotely Google Compute Engine.")
+        print("Yes, this MAY cost you real $$$.")
+        _run_commodity(label)
+    else:
+        raise ValueError("Unknown AWS action: {0}".format(sub))
 
 
-def sync_data_and_code():
+def _sync_data_and_code():
+    # TODO(andrei): '--progress' flag for rsync or pipe through 'pv'.
     run('mkdir -p ~/deploy/data/preprocessing')
 
     # Ensure we have a trailing slash for rsync to work as intended.
@@ -207,8 +206,6 @@ def tb():
 def tensorboard():
     """Starts a remote tensorboard to see your pipeline's status.
 
-    TODO(andrei): Run in screen.
-
     Make sure you allow TCP on port 6006 for the remote machine!
     """
 
@@ -218,10 +215,12 @@ def tensorboard():
 
 
 def _in_screen(cmd, screen_name, **kw):
-    # The final 'exec bash' prevents the screen from terminating when the
-    # command exits.
+    """Runs the specified command inside a persistent screen.
+
+    The screen persists into a regular 'bash' after the command completes.
+    """
     screen = "screen -dmS {} bash -c '{} ; exec bash'".format(screen_name, cmd)
-    print(screen)
+    print("Screen to run: [{0}]".format(screen))
     run(screen, pty=False, **kw)
 
 
