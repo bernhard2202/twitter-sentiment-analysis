@@ -1,0 +1,43 @@
+# Concatenation
+## embedding-dimensions for each word: 20
+## maximum number of words per tweet: 25
+
+1: Mean validation score: 0.677 (std: 0.003)
+Parameters: {'alpha': 0.001}
+
+2: Mean validation score: 0.665 (std: 0.005)
+Parameters: {'alpha': 0.0005}
+
+3: Mean validation score: 0.655 (std: 0.001)
+Parameters: {'alpha': 0.0001}
+
+4: Mean validation score: 0.644 (std: 0.004)
+Parameters: {'alpha': 1e-05}
+
+5: Mean validation score: 0.632 (std: 0.010)
+Parameters: {'alpha': 5e-05}
+
+Train accuracy: 0.6919524
+Train F1 score: 0.6919524
+
+# Averaging
+## embedding-dimensions for each word: 20
+## maximum number of words per tweet: inf (average)
+
+1: Mean validation score: 0.634 (std: 0.001)
+Parameters: {'alpha': 1e-05}
+
+2: Mean validation score: 0.632 (std: 0.001)
+Parameters: {'alpha': 0.001}
+
+3: Mean validation score: 0.631 (std: 0.000)
+Parameters: {'alpha': 5e-05}
+
+4: Mean validation score: 0.631 (std: 0.001)
+Parameters: {'alpha': 0.0005}
+
+5: Mean validation score: 0.631 (std: 0.000)
+Parameters: {'alpha': 0.0001}
+
+Train accuracy: 0.6313264
+Train F1 score: 0.6313264
