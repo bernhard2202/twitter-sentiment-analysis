@@ -137,16 +137,16 @@ def _run_tf(run_label: str) -> str:
     to LFS using 'bsub' on Euler.
     """
     # TODO(andrei): Pass these all these parameters as arguments to fabric.
-    return (' ../train_model.py --num_epochs 12 --lstm'
+    return (' ../train_model.py --num_epochs 6 --lstm'
             #' --filter_sizes "3,4,5,7"'
             ' --data_root ../data'
             ' --clip_gradients'
-            ' --lstm_hidden_size 512 --lstm_hidden_layers 5'
+            ' --lstm_hidden_size 128 --lstm_hidden_layers 1'
             # TODO(andrei): RNNs clip gradients. Try a larger learning rate!
             # LSTM examples using ADAM seem OK with 0.001.
             ' --learning_rate 0.0001'
-            ' --dropout_keep_prob 0.4'
-            ' --batch_size 256 --evaluate_every 1000'
+            ' --dropout_keep_prob 1.0'
+            ' --batch_size 256 --evaluate_every 2500'
             ' --checkpoint_every 8500 --output_every 500'
             ' --test_split 20'
             ' --label "' + run_label + '"')

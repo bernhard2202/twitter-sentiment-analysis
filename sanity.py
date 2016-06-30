@@ -174,13 +174,17 @@ def main(_):
     # preprocessed files. This is more effective than having to set 10+ flags.
     config_A = ModelConfig(
         FLAGS.checkpoint_file,
-        trainx_fname='data/preprocessing-old-lstm/full-trainX.npy',
-        trainy_fname='data/preprocessing-old-lstm/full-trainY.npy',
-        valid_fname='data/preprocessing-old-lstm/validateX.npy',
-        input_x_name='input_batch_x',
-        input_y_name='input_batch_x_1',
-        predictions_name='output/Softmax',
-        accuracies_name='accuracy/Mean')
+        # trainx_fname='data/preprocessing-old-lstm/full-trainX.npy',
+        # trainy_fname='data/preprocessing-old-lstm/full-trainY.npy',
+        # valid_fname='data/preprocessing-old-lstm/validateX.npy',
+        # trainx_fname='data/preprocessing-optimal-nikos/full-trainX.npy',
+        # trainy_fname='data/preprocessing-optimal-nikos/full-trainY.npy',
+        # valid_fname='data/preprocessing-optimal-nikos/validateX.npy',
+        # input_x_name='input_batch_x',
+        # input_y_name='input_batch_x_1',
+        # predictions_name='output/Softmax',
+        # accuracies_name='accuracy/Mean')
+    )
 
     acc_A, preds_A = evaluate(config_A)
     print("Accuracy A using clean mode: {0}".format(acc_A))
