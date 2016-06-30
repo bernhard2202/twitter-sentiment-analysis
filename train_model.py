@@ -212,7 +212,7 @@ with tf.Graph().as_default():
         train_op = optimizer.apply_gradients(grads_and_vars,
                                              global_step=global_step)
 
-        # Keep track of gradient values and sparsity (optional)
+        # Keep track of gradient values and sparsity (time intense!)
         # grad_summaries = []
         # for g, v in grads_and_vars:
         #     if g is not None:
@@ -278,6 +278,7 @@ with tf.Graph().as_default():
               model.input_y: y_batch,
               model.dropout_keep_prob: FLAGS.dropout_keep_prob
             }
+            # add grad_summaries_merged to keep track of gradient values (time intense!)
             _, step, summaries, train_loss, train_accuracy = sess.run(
                 [train_op, global_step, train_summary_op, model.loss, model.accuracy],
                 feed_dict)
