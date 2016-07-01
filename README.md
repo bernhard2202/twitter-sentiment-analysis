@@ -17,6 +17,7 @@ It employs TensorFlow and scikit-learn as the main machine learning toolkits, an
 virtual environment (e.g. `virtualenv` or Anaconda) is highly recommended.
 
  1. Ensure that the [Twitter data files from Kaggle][0] is in the `data/train` and `data/test` folders.
+    The [pre-computed Google word2vec corups][1] must also be present in the `data/word2vec` folder.
  2. Run the preprocessing algorithm:
  
     ```bash
@@ -54,5 +55,5 @@ virtual environment (e.g. `virtualenv` or Anaconda) is highly recommended.
 
 
 [0]:https://inclass.kaggle.com/c/cil-text-classification/data
-
+[1]:https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/
 

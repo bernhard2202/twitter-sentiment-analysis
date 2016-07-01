@@ -20,7 +20,6 @@ class TextLSTM(object):
                      and subsequent layers are all 'hidden_size'-dimensional.
 
     TODO(andrei): Also try a bidirectional RNN.
-    TODO(andrei): Experiment with deeper LSTM.
     TODO(andrei): Consider using 'EmbeddingWrapper'.
     TODO(andrei): NEVER use 'tf.Variable' directly!
     TODO(andrei): Use 'variable_scope' instead of 'name_scope'.
