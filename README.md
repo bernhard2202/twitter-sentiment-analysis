@@ -4,7 +4,7 @@
 
 Twitter Sentiment Analysis with Deep Convolutional Neural Networks and LSTMs in TensorFlow.
 
-Authors: **Andrei Bârsan** (@AndreiBarsan), **Bernhard Kratzwald** (@bernhard2202), **Nikos Kolitsas** (@NikosKolitsas).
+Authors: **Andrei Bârsan** (@AndreiBarsan), **Bernhard Kratzwald** (@bernhard2202), **Nikolaos Kolitsas** (@NikosKolitsas).
 
 Team: **Free the Varaibles!**
 
