@@ -65,9 +65,6 @@ def euler(sub='run', label='euler'):
     elif sub == 'status':
         run('bjobs')
     elif sub == 'fetch':
-        # TODO(andrei): Do this in nicer way.
-        raise ValueError("This may download the wrong thing(s) from Euler."
-                         " Disable this error and use at your own risk!")
         _download_results('euler')
     else:
         raise ValueError("Unknown Euler action: {0}".format(sub))
@@ -137,16 +134,13 @@ def _run_tf(run_label: str) -> str:
     to LFS using 'bsub' on Euler.
     """
     # TODO(andrei): Pass these all these parameters as arguments to fabric.
-    return (' ../train_model.py --num_epochs 12 --lstm'
-            #' --filter_sizes "3,4,5,7"'
+    return (' ../train_model.py --num_epochs 6 --lstm'
             ' --data_root ../data'
             ' --clip_gradients'
-            ' --lstm_hidden_size 512 --lstm_hidden_layers 5'
-            # TODO(andrei): RNNs clip gradients. Try a larger learning rate!
-            # LSTM examples using ADAM seem OK with 0.001.
+            ' --lstm_hidden_size 256 --lstm_hidden_layers 2'
             ' --learning_rate 0.0001'
-            ' --dropout_keep_prob 0.4'
-            ' --batch_size 256 --evaluate_every 1000'
+            ' --dropout_keep_prob 0.5'
+            ' --batch_size 256 --evaluate_every 2500'
             ' --checkpoint_every 8500 --output_every 500'
             ' --test_split 20'
             ' --label "' + run_label + '"')

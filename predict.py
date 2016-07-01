@@ -76,8 +76,6 @@ with graph.as_default():
             if (id + 1) % 1000 == 0:
                 print("Done tweets: {0}/{1}".format(id + 1, len(validation_data)))
 
-            # TODO(andrei): Why does running 'predictions' return TWO identical
-            # rows? (See the necessary '[0]'.)
             prediction = sess.run(predictions, {
                 input_x: [row],
                 dropout_keep_prob: 1.0

@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
 
+echo "Will preprocess everything accordingly."
+echo "Will trim all tweets to maximum length 35."
+
 ./build_vocab.sh
-./preprocess.py --full True --vocab_has_counts True --advanced True --pretrained_w2v True
+./preprocessv2.py --full --sentence-length 35
