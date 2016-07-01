@@ -27,7 +27,7 @@ use them to compute the results we submitted to Kaggle. If the Polybox
 file stops being available (starting in 2017), please contact
 `barsana@student.ethz.ch` or follow the steps in the next section.
 
-## Setting up
+## Training from scratch
 
 This project requires Python 3.5. It uses 3.5 features such as type hints.
 It employs TensorFlow and scikit-learn as the main machine learning toolkits, and uses Fabric3 for launching the training pipelines remotely (e.g. to AWS or to Euler). Using a
@@ -76,13 +76,13 @@ virtual environment (e.g. `virtualenv` or Anaconda) is highly recommended.
 
 ## Miscellaneous
 
-The `sanity.py` tool can be used to verify a trained model (checkpoint)
+The `ensemble.py` tool can be used to verify a trained model (checkpoint)
 on the local training data to ensure that it is correct, and that the
 local data isn't wrong (e.g. it hasn't been recomputed with different
 preprocessing parameters, thereby making the trained model stale). This
 tool can also be used to compute probability averaging from two models'
 predictions by specifying a second checkpoint to load. Please run
-`python -m sanity --help` for more information.
+`python -m ensemble --help` for more information.
 
 There area also a few Jupyter notebooks in the `notebooks/` folder. Most
 of them require the preprocessing to have been run first.
