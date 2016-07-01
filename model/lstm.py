@@ -127,11 +127,7 @@ class TextLSTM(object):
                                            name="accuracy")
 
     @staticmethod
-    def _cell(
-        input_size,
-        num_units,
-        use_peepholes,
-        dropout_keep_prob):
+    def _cell(input_size, num_units, use_peepholes, dropout_keep_prob):
         """Helper for building an LSTM cell."""
 
         # Note: 'input_size' is deprecated in TF 0.9, but required in TF 0.8

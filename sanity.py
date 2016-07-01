@@ -21,6 +21,7 @@ import time
 random_seed = 0x123
 random.seed(random_seed)
 np.random.seed(random_seed)
+
 default_pp = os.path.join('data', 'preprocessing')
 
 # Example: './data/runs/euler/local-w2v-275d-1466050948/checkpoints/model-96690'
