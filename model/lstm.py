@@ -46,9 +46,11 @@ class TextLSTM(object):
 
         # Funnel the words into the LSTM.
         # Current size: (batch_size, n_words, emb_dim)
-        # Want:         [(batch_size, n_hidden) * n_words <- ??? IS THIS RIGHT?]
+        # Want:         [(batch_size, n_hidden) * n_words]
         #
         # Since otherwise there's no way to feed information into the LSTM cell.
+        # Yes, it's a bit confusing, because we want a batch of multiple
+        # sequences, with each step being of 'embedding_size'.
         embedded_words = tf.transpose(embedded_words, [1, 0, 2])
         embedded_words = tf.reshape(embedded_words, [-1, embedding_size])
         # Note: 'tf.split' outputs a **Python** list.

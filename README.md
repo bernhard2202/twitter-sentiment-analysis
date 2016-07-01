@@ -29,6 +29,7 @@ virtual environment (e.g. `virtualenv` or Anaconda) is highly recommended.
  3. Train the LSTM pipeline on Euler:
  
     a) Ensure that 'euler' points to the right user and hostname in you sshconfig.
+    
     b) Ensure that you have all local dependencies installed (preferably in a virtual environment).
     
     ```bash
@@ -42,6 +43,7 @@ virtual environment (e.g. `virtualenv` or Anaconda) is highly recommended.
     ```
     
     d) Wait roughly 36 hours. Fabric3 is smart enough to tell LSF to email you when the job kicks off, and when it completes.
+    
     e) Use Fabric3 to grab the results:
     
     ```bash
