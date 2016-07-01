@@ -13,6 +13,20 @@ Computational Intelligence Lab (CIL) Project for Summer Semester 2016 at ETH Zur
 Most of the interesting TensorFlow code is located in `train_model.py`,
 `model/cnn_model.py`, and `model/lstm.py`.
 
+## Kaggle result reproduction
+
+In order to regenerate the top Kaggle submission, please ensure all
+Python requirements are installed (next section, step 3.b) and then run:
+
+```bash
+./run.sh
+```
+    
+This will download the top TensorFlow checkpoints from Polybox and
+use them to compute the results we submitted to Kaggle. If the Polybox
+file stops being available (starting in 2017), please contact
+`barsana@student.ethz.ch` or follow the steps in the next section.
+
 ## Setting up
 
 This project requires Python 3.5. It uses 3.5 features such as type hints.
