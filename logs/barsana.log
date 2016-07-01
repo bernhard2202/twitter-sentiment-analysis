@@ -35,16 +35,6 @@ Fixed w2v bug (18 Jun)
    * LOW: 4, HI: 20, HTFB: 10, 96k steps: 0.86680
    * LOW: 4, HI: 20, HTFB: 10, 68k steps: 0.86540
 
- * LSTM + Nikos's preprocessing (optimal params, as above):
-   * <PENDING>; old one was killed after 24h :(
-
  * Deep LSTM + Nikos's preprocessing (no optimal params):
-   *
+   * Underfit.
 
-## Experiments to do
- * Same as above, but with pretrained GloVe
- * Same as above, but with local GloVe
- * [LOW] Embedding size 400 (will be slower to train).
- * [LOW] Submit local-trained 225-d results to kaggle. Should be worse than 275-d.
- * [LOW, complex] Another convolution layer?
- * [LOW, complex, investigating] Different architecture: RNN.
