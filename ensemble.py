@@ -1,4 +1,4 @@
-"""Utility for double checking a model's train/dev accuracy.
+"""Utility for computing simple averaged predictions.
 
 Also supports evaluating simple ensembles of two NNs.
 """
@@ -18,11 +18,13 @@ import random
 import time
 
 
+# This ensures our predictions are consistent.
 random_seed = 0x123
 random.seed(random_seed)
 np.random.seed(random_seed)
 
-default_pp = os.path.join('data', 'preprocessing')
+# default_pp = os.path.join('data', 'preprocessing')
+default_pp = os.path.join('data', 'preprocessing-bogus')
 
 # Example: './data/runs/euler/local-w2v-275d-1466050948/checkpoints/model-96690'
 tf.flags.DEFINE_string("checkpoint_file", None, "Checkpoint file from the"
@@ -39,6 +41,8 @@ tf.flags.DEFINE_string("validation_data_file",
                        os.path.join(default_pp, 'validateX.npy'),
                        "Data used for Kaggle prediction using ensemble, if"
                        " enabled.")
+tf.flags.DEFINE_bool("train_error", False, "Whether to actually validate"
+                                           " models on the training set.")
 FLAGS = tf.flags.FLAGS
 
 # How many data points to evaluate out of the training data.
@@ -75,16 +79,17 @@ class ModelConfig(object):
         self.predictions_name = predictions_name
         self.accuracies_name = accuracies_name
 
-        self.trainx = np.load(trainx_fname)
-        self.trainy = np.load(trainy_fname)
+        if FLAGS.train_error:
+            self.trainx = np.load(trainx_fname)
+            self.trainy = np.load(trainy_fname)
 
-        # Shuffle the data in a predictable way, so that multiple configs
-        # load different data files (preprocessed differently) but shuffle them
-        # in an identical way.
-        self.trainx, self.trainy = shuffle(self.trainx, self.trainy,
-                                           random_state=random_seed)
-        self.trainx = self.trainx[:evlim]
-        self.trainy = self.trainy[:evlim]
+            # Shuffle the data in a predictable way, so that multiple configs
+            # load different data files (preprocessed differently) but shuffle them
+            # in an identical way.
+            self.trainx, self.trainy = shuffle(self.trainx, self.trainy,
+                                               random_state=random_seed)
+            self.trainx = self.trainx[:evlim]
+            self.trainy = self.trainy[:evlim]
 
         self.validx = np.load(valid_fname)
 
@@ -177,48 +182,49 @@ def main(_):
         FLAGS.checkpoint_file,
         # trainx_fname='data/preprocessing-old-lstm/full-trainX.npy',
         # trainy_fname='data/preprocessing-old-lstm/full-trainY.npy',
-        # valid_fname='data/preprocessing-old-lstm/validateX.npy',
-        # trainx_fname='data/preprocessing-optimal-nikos/full-trainX.npy',
-        # trainy_fname='data/preprocessing-optimal-nikos/full-trainY.npy',
-        # valid_fname='data/preprocessing-optimal-nikos/validateX.npy',
-        # input_x_name='input_batch_x',
-        # input_y_name='input_batch_x_1',
-        # predictions_name='output/Softmax',
-        # accuracies_name='accuracy/Mean')
-    )
+        valid_fname='data/key-checkpoints/validateXlstm.npy',
+        input_x_name='input_batch_x',
+        input_y_name='input_batch_x_1',
+        predictions_name='output/Softmax',
+        accuracies_name='accuracy/Mean')
 
-    acc_A, preds_A = evaluate(config_A)
-    print("Accuracy A using clean mode: {0}".format(acc_A))
+    if FLAGS.train_error:
+        acc_A, preds_A = evaluate(config_A)
+        print("Accuracy A using clean mode: {0}".format(acc_A))
 
     if second_cp is not None:
-        config_B = ModelConfig(second_cp)
-        acc_B, preds_B = evaluate(config_B)
-        print("Accuracy B using clean mode: {0}".format(acc_B))
+        config_B = ModelConfig(second_cp,
+                               valid_fname='data/key-checkpoints/validateXcnn.npy')
 
-        print("Computing aggregate predictions now...")
-        pos_res = (preds_A[:, 0] + preds_B[:, 0]) / 2
-        neg_res = (preds_A[:, 1] + preds_B[:, 1]) / 2
+        if FLAGS.train_error:
+            acc_B, preds_B = evaluate(config_B)
+            print("Accuracy B using clean mode: {0}".format(acc_B))
 
-        agg = np.vstack([pos_res, neg_res]).T
-        print(agg)
+            print("Computing aggregate predictions now...")
+            pos_res = (preds_A[:, 0] + preds_B[:, 0]) / 2
+            neg_res = (preds_A[:, 1] + preds_B[:, 1]) / 2
 
-        assert 0 == np.sum(~np.equal(config_A.trainy, config_B.trainy)), \
-            "There should be no discrepancies between the training labels of" \
-            " the two configs, since they are not preprocessed."
+            agg = np.vstack([pos_res, neg_res]).T
+            print(agg)
 
-        train_y = config_A.trainy
-        zero_preds = 0
-        correct = 0
-        for id, pred in enumerate(agg):
-            if pred[0] >= pred[1]:
-                zero_preds += 1
+            assert 0 == np.sum(~np.equal(config_A.trainy, config_B.trainy)), \
+                "There should be no discrepancies between the training labels of" \
+                " the two configs, since they are not preprocessed."
 
-            if (pred[0] >= 0.5 and train_y[id][0] == 1) \
-                    or (pred[0] < 0.5 and train_y[id][1] == 1):
-                correct += 1
+        if FLAGS.train_error:
+            train_y = config_A.trainy
+            zero_preds = 0
+            correct = 0
+            for id, pred in enumerate(agg):
+                if pred[0] >= pred[1]:
+                    zero_preds += 1
 
-        aggregate_acc = correct * 1.0 / evlim
-        print("Final aggregate accuracy: {0}".format(aggregate_acc))
+                if (pred[0] >= 0.5 and train_y[id][0] == 1) \
+                        or (pred[0] < 0.5 and train_y[id][1] == 1):
+                    correct += 1
+
+            aggregate_acc = correct * 1.0 / evlim
+            print("Final aggregate accuracy: {0}".format(aggregate_acc))
 
         # TODO(andrei): Make code a little less wasteful in terms of reloading
         # models.
