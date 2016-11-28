@@ -8,12 +8,14 @@ Authors: **Andrei Bârsan** (@AndreiBarsan), **Bernhard Kratzwald** (@bernhard22
 
 Team: **Free the Varaibles!**
 
-Computational Intelligence Lab (CIL) Project for Summer Semester 2016 at ETH Zurich.
+Computational Intelligence Lab (CIL) Project for the 2016 Summer Semester at ETH Zurich.
 
 Most of the interesting TensorFlow code is located in `train_model.py`,
 `model/cnn_model.py`, and `model/lstm.py`.
 
-## Kaggle result reproduction
+## Kaggle result reproduction (for grading by the ETH TAs)
+
+**Note that this option is no longer available, since the projects were graded in August 2016. Please train the network from scratch instead. (See below.)**
 
 In order to regenerate the top Kaggle submission, please ensure all
 Python requirements are installed (next section, step 3.b) and then run:
@@ -30,11 +32,11 @@ file stops being available (starting in 2017), please contact
 ## Training from scratch
 
 This project requires Python 3.5. It uses 3.5 features such as type hints.
-It employs TensorFlow and scikit-learn as the main machine learning toolkits, and uses Fabric3 for launching the training pipelines remotely (e.g. to AWS or to Euler). Using a
-virtual environment (e.g. `virtualenv` or Anaconda) is highly recommended.
+It employs TensorFlow and scikit-learn as the main machine learning toolkits, and uses Fabric3 for launching the training pipelines remotely (e.g., to AWS or to Euler). Using a
+virtual environment (e.g., `virtualenv` or Anaconda) is highly recommended.
 
  1. Ensure that the [Twitter data files from Kaggle][0] is in the `data/train` and `data/test` folders.
-    The [pre-computed Google word2vec corups][1] must also be present in the `data/word2vec` folder.
+    The [pre-computed Google word2vec corpus][1] must also be present in the `data/word2vec` folder.
  2. Run the preprocessing algorithm:
  
     ```bash
@@ -42,7 +44,7 @@ virtual environment (e.g. `virtualenv` or Anaconda) is highly recommended.
     ```
  3. Train the LSTM pipeline on Euler:
  
-    a) Ensure that 'euler' points to the right user and hostname in you sshconfig.
+    a) Ensure that 'euler' points to the right user and hostname in you sshconfig (usually `~/.ssh/config`).
     
     b) Ensure that you have all local dependencies installed (preferably in a virtual environment).
     
@@ -50,35 +52,36 @@ virtual environment (e.g. `virtualenv` or Anaconda) is highly recommended.
     pip install -r requirements.txt
     ```
     
-    c) Start the process using Fabric3.
+    c) Start the process on Euler using Fabric3. Training can also occur locally. Please see `fabfile.py` for more details on how to manually train the pipeline.
     
     ```bash
     fab euler:run    
     ```
     
-    d) Wait roughly 36 hours. Fabric3 is smart enough to tell LSF to email you when the job kicks off, and when it completes.
+    d) Wait roughly 36 hours (much faster if you have a GPU!). Fabric3 is smart enough to tell LSF to email you when the job kicks off, and when it completes.
     
-    e) Use Fabric3 to grab the results:
+    e) Use Fabric3 to grab the results (if the training was done remotely):
     
     ```bash
     fab euler:fetch
     ```
     
- 4. Use one of the downloaded checkpoints to compute the prediction:
+ 4. Use one of the generated checkpoints to compute the prediction (necessary for submitting on Kaggle, or making fresh predictions):
  
     ```bash
     python -m predict --checkpoint_file data/runs/euler/<your-run>/checkpoints/model-<step-count>
     ```
     
- 5. To train e.g. the CNN pipeline, modify `fabfile.py` accordingly, so that the `--nolstm` flag is used in the `_run_tf` function, and then repeat steps 3 and 4. The CNN should be faster to train (~5h over 10 epochs).
- 6. One can also train things locally. For more information, run `python -m train_model --help`.
+ 5. To train e.g., the CNN pipeline, modify `fabfile.py` accordingly, so that the `--nolstm` flag is used in the `_run_tf` function, and then repeat steps 3 and 4. The CNN should be faster to train (~5h over 10 epochs on Euler, i.e., on 48 CPU cores).
+ 
+ 6. As mentioned before, one can also train things locally. For more information, run `python -m train_model --help`.
 
 
 ## Miscellaneous
 
 The `ensemble.py` tool can be used to verify a trained model (checkpoint)
 on the local training data to ensure that it is correct, and that the
-local data isn't wrong (e.g. it hasn't been recomputed with different
+local data isn't wrong (e.g., it hasn't been recomputed with different
 preprocessing parameters, thereby making the trained model stale). This
 tool can also be used to compute probability averaging from two models'
 predictions by specifying a second checkpoint to load. Please run
